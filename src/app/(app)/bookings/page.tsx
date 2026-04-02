@@ -1,5 +1,6 @@
 import { bookingService } from "@/lib/bookings";
 import type { FlagType, SortableColumn } from "@/lib/bookings";
+import { PAGE_SIZE_OPTIONS } from "@/lib/bookings/booking-queries";
 import {
   parseBookingFilters,
   bookingListUrl,
@@ -79,6 +80,14 @@ export default async function BookingsPage(props: {
       ? bookingListUrl({ ...filters, page: result.page + 1 })
       : null;
 
+  // Pre-compute page size URLs (reset to page 1 when changing page size)
+  const pageSizeUrls = Object.fromEntries(
+    PAGE_SIZE_OPTIONS.map((size) => [
+      size,
+      bookingListUrl({ ...filters, pageSize: size, page: 1 }),
+    ]),
+  ) as Record<number, string>;
+
   return (
     <>
       <PageHeader
@@ -115,6 +124,9 @@ export default async function BookingsPage(props: {
             totalPages={result.totalPages}
             prevUrl={prevUrl}
             nextUrl={nextUrl}
+            currentPageSize={result.pageSize}
+            pageSizeOptions={PAGE_SIZE_OPTIONS}
+            pageSizeUrls={pageSizeUrls}
           />
         </>
       )}

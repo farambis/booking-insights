@@ -73,6 +73,7 @@ export interface BookingFilters {
   dateFrom: string | null; // ISO date
   dateTo: string | null; // ISO date
   page: number;
+  pageSize: number;
   sort: SortableColumn;
   sortDirection: "asc" | "desc";
 }

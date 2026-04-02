@@ -4,6 +4,7 @@ import type {
   FlagType,
   SortableColumn,
 } from "./booking.types";
+import { DEFAULT_PAGE_SIZE, PAGE_SIZE_OPTIONS } from "./booking-queries";
 
 const VALID_STATUSES: BookingStatus[] = ["critical", "warning", "clean"];
 const VALID_FLAG_TYPES: FlagType[] = [
@@ -32,6 +33,7 @@ const DEFAULTS: BookingFilters = {
   dateFrom: null,
   dateTo: null,
   page: 1,
+  pageSize: DEFAULT_PAGE_SIZE,
   sort: "date",
   sortDirection: "desc",
 };
@@ -70,6 +72,12 @@ export function parseBookingFilters(
         .filter((f): f is FlagType => VALID_FLAG_TYPES.includes(f as FlagType))
     : [];
 
+  const rawPageSize = getNumber(raw, "pageSize");
+  const pageSize =
+    rawPageSize && PAGE_SIZE_OPTIONS.includes(rawPageSize as (typeof PAGE_SIZE_OPTIONS)[number])
+      ? rawPageSize
+      : DEFAULTS.pageSize;
+
   return {
     search: getString(raw, "search"),
     status:
@@ -83,6 +91,7 @@ export function parseBookingFilters(
     dateFrom: getString(raw, "dateFrom"),
     dateTo: getString(raw, "dateTo"),
     page: getNumber(raw, "page") ?? DEFAULTS.page,
+    pageSize,
     sort:
       sort && VALID_SORT_COLUMNS.includes(sort as SortableColumn)
         ? (sort as SortableColumn)
@@ -114,6 +123,9 @@ export function serializeBookingFilters(
   if (filters.dateTo) params.set("dateTo", filters.dateTo);
   if (filters.page && filters.page !== DEFAULTS.page) {
     params.set("page", String(filters.page));
+  }
+  if (filters.pageSize && filters.pageSize !== DEFAULTS.pageSize) {
+    params.set("pageSize", String(filters.pageSize));
   }
   if (filters.sort && filters.sort !== DEFAULTS.sort) {
     params.set("sort", filters.sort);

@@ -10,7 +10,8 @@ import type {
 } from "./booking.types";
 import { flagTypeLabel } from "./format";
 
-const PAGE_SIZE = 50;
+export const DEFAULT_PAGE_SIZE = 50;
+export const PAGE_SIZE_OPTIONS = [25, 50, 100] as const;
 
 const STATUS_PRIORITY: Record<string, number> = {
   critical: 0,
@@ -122,17 +123,18 @@ export function queryBookings(
   const filtered = applyFilters(bookings, filters);
   const sorted = sortBookings(filtered, filters.sort, filters.sortDirection);
 
+  const pageSize = filters.pageSize ?? DEFAULT_PAGE_SIZE;
   const totalCount = sorted.length;
-  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
   const page = Math.min(Math.max(1, filters.page), totalPages);
-  const start = (page - 1) * PAGE_SIZE;
-  const items = sorted.slice(start, start + PAGE_SIZE);
+  const start = (page - 1) * pageSize;
+  const items = sorted.slice(start, start + pageSize);
 
   return {
     items,
     totalCount,
     page,
-    pageSize: PAGE_SIZE,
+    pageSize,
     totalPages,
   };
 }
