@@ -34,18 +34,18 @@ Das Script ist deterministisch (Seed 42) — jeder Lauf erzeugt identische Daten
 
 Jede Zeile ist eine Belegposition mit:
 
-| Feld | Beschreibung |
-|------|-------------|
-| `company_code` | Buchungskreis (z.B. "1000") |
-| `posting_date` | Buchungsdatum |
-| `document_id` | Belegnummer |
-| `line_id` | Positionsnummer |
-| `gl_account` | Sachkonto (6-stellig) |
-| `cost_center` | Kostenstelle |
-| `amount` | Betrag (immer positiv) |
-| `currency` | Währung |
-| `debit_credit` | "S" (Soll) / "H" (Haben) |
-| `booking_text` | Buchungstext |
+| Feld            | Beschreibung                      |
+| --------------- | --------------------------------- |
+| `company_code`  | Buchungskreis (z.B. "1000")       |
+| `posting_date`  | Buchungsdatum                     |
+| `document_id`   | Belegnummer                       |
+| `line_id`       | Positionsnummer                   |
+| `gl_account`    | Sachkonto (6-stellig)             |
+| `cost_center`   | Kostenstelle                      |
+| `amount`        | Betrag (immer positiv)            |
+| `currency`      | Währung                           |
+| `debit_credit`  | "S" (Soll) / "H" (Haben)          |
+| `booking_text`  | Buchungstext                      |
 | `document_type` | Belegart (KR, DR, KZ, DZ, SA, AB) |
 
 Jeder Beleg ist ausgeglichen (Summe Soll = Summe Haben).

@@ -1,30 +1,17 @@
-import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import Home from "./page";
 
-vi.mock("next/image", () => ({
-  __esModule: true,
-  // eslint-disable-next-line jsx-a11y/alt-text, @next/next/no-img-element
-  default: (props: React.ComponentProps<"img">) => <img {...props} />,
+vi.mock("next/navigation", () => ({
+  redirect: vi.fn(),
 }));
 
-describe("Home page", () => {
-  it("renders the heading", () => {
-    render(<Home />);
-    expect(
-      screen.getByRole("heading", {
-        name: /to get started, edit the page\.tsx file/i,
-      }),
-    ).toBeInTheDocument();
-  });
+describe("Root page", () => {
+  it("redirects to /dashboard", async () => {
+    const { redirect } = await import("next/navigation");
+    // Import page after mock is in place
+    const { default: RootPage } = await import("./page");
 
-  it("renders deploy and documentation links", () => {
-    render(<Home />);
-    expect(
-      screen.getByRole("link", { name: /deploy now/i }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("link", { name: /documentation/i }),
-    ).toBeInTheDocument();
+    RootPage();
+
+    expect(redirect).toHaveBeenCalledWith("/dashboard");
   });
 });
