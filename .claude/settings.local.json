@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx create-next-app@latest:*)",
+      "Bash(git init:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(npm install:*)",
+      "Bash(npx lefthook:*)",
+      "Bash(npx vitest:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npm run:*)",
+      "Bash(git:*)",
+      "Bash(LEFTHOOK=0 git commit -m \"Initial commit\")",
+      "Bash(LEFTHOOK=0 git commit -m \"Add Prettier with Tailwind plugin and pre-commit formatting\")"
+    ]
+  }
+}
