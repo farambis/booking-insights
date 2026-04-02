@@ -53,3 +53,7 @@ Jeder Beleg ist ausgeglichen (Summe Soll = Summe Haben).
 ### Kontenlogik
 
 Die Kontenbereiche und das Kontenverzeichnis sind in `src/lib/data/account-master.ts` definiert und dokumentiert.
+
+## Exercise 2: Text-Based Anomaly Detection
+
+Erkennung auffälliger Buchungstexte mittels Levenshtein-Distanz und Häufigkeitsanalyse. Details siehe [docs/exercise-2.md](docs/exercise-2.md).
