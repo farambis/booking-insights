@@ -131,7 +131,7 @@ function transformAndFlag(rawLines: JournalEntryLine[]): BookingDetail[] {
 // Module-level cache: transform once at import time
 const allBookings = transformAndFlag(journalEntries as JournalEntryLine[]);
 
-export const mockBookingService: BookingService = {
+export const localBookingService: BookingService = {
   async getDashboardSummary() {
     return buildDashboardSummary(allBookings);
   },
