@@ -1,25 +1,35 @@
 "use client";
 
+import Link from "next/link";
+
 export default function Error({
-  error,
   reset,
 }: {
   error: Error & { digest?: string };
   reset: () => void;
 }) {
-  console.error(error);
-
   return (
-    <div className="flex flex-1 flex-col items-center justify-center gap-4">
-      <h1 className="text-3xl font-semibold tracking-tight">
+    <div className="flex min-h-[60vh] flex-col items-center justify-center gap-3 px-4 text-center">
+      <h1 className="text-2xl font-semibold tracking-tight text-neutral-900">
         Something went wrong
       </h1>
-      <button
-        onClick={reset}
-        className="bg-foreground text-background rounded-full px-5 py-2 transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc]"
-      >
-        Try again
-      </button>
+      <p className="max-w-sm text-sm text-neutral-500">
+        An unexpected error occurred. Your data has not been affected.
+      </p>
+      <div className="mt-4 flex items-center gap-3">
+        <button
+          onClick={reset}
+          className="rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-neutral-800"
+        >
+          Try Again
+        </button>
+        <Link
+          href="/"
+          className="rounded-md px-4 py-2 text-sm font-medium text-neutral-600 transition-colors hover:text-neutral-900"
+        >
+          Go to Dashboard
+        </Link>
+      </div>
     </div>
   );
 }
