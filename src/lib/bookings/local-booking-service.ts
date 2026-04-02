@@ -13,6 +13,7 @@ import {
   buildDashboardSummary,
   findRelated,
 } from "./booking-queries";
+import { detectTextAnomalies } from "./text-anomaly-detector";
 
 function lookupAccountName(glAccount: string): string | null {
   return GL_ACCOUNTS.find((a) => a.number === glAccount)?.name ?? null;
@@ -44,7 +45,7 @@ function groupByDocument(
 
 /** Transform raw journal entries into BookingDetail[] */
 function transformAndFlag(rawLines: JournalEntryLine[]): BookingDetail[] {
-  const flagMap = new Map<string, BookingFlag[]>();
+  const flagMap = detectTextAnomalies(rawLines);
   const documents = groupByDocument(rawLines);
   const bookings: BookingDetail[] = [];
 
