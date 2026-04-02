@@ -18,6 +18,7 @@ const defaultFilters: BookingFilters = {
   amountMax: null,
   dateFrom: null,
   dateTo: null,
+  pageSize: 50,
   page: 1,
   sort: "date",
   sortDirection: "desc",

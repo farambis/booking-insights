@@ -75,6 +75,7 @@ function defaultFilters(
     dateFrom: null,
     dateTo: null,
     page: 1,
+    pageSize: 50,
     sort: "date",
     sortDirection: "desc",
     ...overrides,

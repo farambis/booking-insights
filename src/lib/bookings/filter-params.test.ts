@@ -20,6 +20,7 @@ describe("filter-params", () => {
         dateFrom: null,
         dateTo: null,
         page: 1,
+        pageSize: 50,
         sort: "date",
         sortDirection: "desc",
       });
@@ -191,6 +192,7 @@ describe("filter-params", () => {
         dateFrom: "2025-01-01",
         dateTo: "2025-02-28",
         page: 2,
+        pageSize: 50,
         sort: "amount",
         sortDirection: "asc",
       };
@@ -216,6 +218,7 @@ describe("filter-params", () => {
         dateFrom: null,
         dateTo: null,
         page: 1,
+        pageSize: 50,
         sort: "date",
         sortDirection: "desc",
       };
