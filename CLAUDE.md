@@ -1,6 +1,6 @@
 @AGENTS.md
 
-# Northscope
+# Booking Insights
 
 ## Commands
 
@@ -44,6 +44,7 @@
 - Use `@/` import alias for all project imports (e.g., `import { Button } from "@/components/Button"`).
 - Name files in kebab-case. Name React components in PascalCase.
 - Colocate tests next to the code they test (e.g., `button.test.tsx` alongside `button.tsx`). Test files use the `*.test.{ts,tsx}` pattern.
+- **Always write tests first (TDD).** Write failing tests that describe expected behavior, then implement the minimum code to make them pass.
 - Tests use Vitest with React Testing Library. Use `globals: true` (describe, it, expect are auto-imported).
 - Code is formatted with Prettier (config in `.prettierrc`) with the Tailwind CSS plugin for consistent class ordering.
 - Error boundary files (`error.tsx`, `global-error.tsx`) and the custom 404 page (`not-found.tsx`) exist at the app root.

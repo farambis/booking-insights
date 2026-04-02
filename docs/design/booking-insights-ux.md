@@ -1,6 +1,6 @@
 # Booking Insights — UX Design Document
 
-**Product:** Northscope  
+**Product:** Booking Insights  
 **Feature:** Booking Insights (Buchungsdaten-Analyse)  
 **Version:** MVP  
 **Date:** 2026-04-02  
@@ -41,7 +41,7 @@ These principles are ordered by priority for this specific product. The user is 
 
 ### Source Analysis
 
-The Northscope brand (northscope.net) uses a light-mode design with:
+The Booking Insights brand (booking-insights.net) uses a light-mode design with:
 
 - **Logo:** Near-black `#1f1f1f` on white — bold, geometric, clean
 - **Primary brand color:** A confident blue — `hsl(207 100% 41%)` which converts to `#006fd6`
@@ -51,14 +51,14 @@ The Northscope brand (northscope.net) uses a light-mode design with:
 
 ### Design Decision: Light Mode Only for MVP
 
-The northscope.net site is light-mode-first. For a financial data tool, light mode is also the professional standard (accountants work in Excel, not dark-mode terminals). Dark mode is a post-MVP concern.
+The booking-insights.net site is light-mode-first. For a financial data tool, light mode is also the professional standard (accountants work in Excel, not dark-mode terminals). Dark mode is a post-MVP concern.
 
 ### Color Palette
 
 #### Brand Colors
 
 ```
---color-brand-primary:     #006fd6   /* hsl(207 100% 41%) — Northscope blue */
+--color-brand-primary:     #006fd6   /* hsl(207 100% 41%) — Booking Insights blue */
 --color-brand-primary-dim: #005ab0   /* hover/pressed state, 15% darker */
 --color-brand-primary-tint:#e6f2fc   /* light blue tint for selected rows, info backgrounds */
 ```
@@ -122,7 +122,7 @@ Row — critical: background: #fef2f2 at 80% opacity (visible red wash)
 
 ## 3. Typography
 
-Northscope's site uses a geometric sans-serif feel. For the app, Geist Sans (already configured in globals.css) is the correct choice — it is legible at small sizes in data tables.
+Booking Insights's site uses a geometric sans-serif feel. For the app, Geist Sans (already configured in globals.css) is the correct choice — it is legible at small sizes in data tables.
 
 ### Type Scale
 
@@ -155,12 +155,12 @@ All monetary amounts use tabular numbers for column alignment. Apply `font-varia
 
 ### Layout Shell
 
-The app uses a sidebar + main content layout. This is consistent with northscope.net's implied product structure and provides room for navigation as features grow.
+The app uses a sidebar + main content layout. This is consistent with booking-insights.net's implied product structure and provides room for navigation as features grow.
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │  TOPBAR (48px)                                                  │
-│  [N] Northscope                             [User]             │
+│  [N] Booking Insights                             [User]             │
 ├──────────────┬──────────────────────────────────────────────────┤
 │              │                                                  │
 │  SIDEBAR     │  MAIN CONTENT AREA                               │
@@ -178,7 +178,7 @@ The app uses a sidebar + main content layout. This is consistent with northscope
 
 - Height: 48px
 - Background: `#ffffff`, bottom border: `#e2e6eb`
-- Left: Northscope "N" logo mark (the bold N from the brand identity, 20px) + wordmark "Northscope" in `font-semibold`
+- Left: Booking Insights "N" logo mark (the bold N from the brand identity, 20px) + wordmark "Booking Insights" in `font-semibold`
 - Right: user avatar or initials placeholder (import/upload is post-MVP)
 - No breadcrumbs in topbar — page title lives in the main content area
 
@@ -930,8 +930,8 @@ Mobile:   < 768px (out of scope for MVP — show a "please use desktop" message)
 Show a full-page message:
 
 ```
-[Northscope logo]
-Northscope works best on a larger screen.
+[Booking Insights logo]
+Booking Insights works best on a larger screen.
 For the best experience analyzing your booking data,
 please open this app on a desktop or laptop.
 [Continue anyway]  ← small link to bypass for edge cases

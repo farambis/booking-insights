@@ -4,7 +4,7 @@ export function Topbar() {
       <div className="flex items-center gap-2">
         <span className="text-lg font-bold text-neutral-900">N</span>
         <span className="text-base font-semibold text-neutral-900">
-          Northscope
+          Booking Insights
         </span>
       </div>
       <div className="ml-auto">
