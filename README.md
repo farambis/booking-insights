@@ -1,36 +1,55 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Northscope
 
-## Getting Started
+Finanz-Analyse-App auf Basis von Buchungsdaten (Journal Entries) im SAP-Stil.
 
-First, run the development server:
+## Setup
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Entwicklung
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm run dev         # Dev-Server starten (Turbopack)
+npm run build       # Production Build
+npm run lint        # ESLint
+npm run typecheck   # TypeScript prüfen
+npm run test        # Vitest im Watch-Mode
+npm run test:run    # Vitest einmalig
+npm run format      # Prettier auf alle Dateien
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Buchungsdaten generieren
 
-## Learn More
+Die App arbeitet mit generierten Journal Entries (`src/lib/data/journal-entries.json`). Die Daten sind bereits im Repo enthalten. Um sie neu zu generieren:
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+npm run generate:data
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Das Script ist deterministisch (Seed 42) — jeder Lauf erzeugt identische Daten. Absichtlich eingebaute Anomalien (Tippfehler, Doppelbuchungen, ungewöhnliche Kombinationen) werden bei der Generierung auf stdout geloggt.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Datenmodell
 
-## Deploy on Vercel
+Jede Zeile ist eine Belegposition mit:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+| Feld | Beschreibung |
+|------|-------------|
+| `company_code` | Buchungskreis (z.B. "1000") |
+| `posting_date` | Buchungsdatum |
+| `document_id` | Belegnummer |
+| `line_id` | Positionsnummer |
+| `gl_account` | Sachkonto (6-stellig) |
+| `cost_center` | Kostenstelle |
+| `amount` | Betrag (immer positiv) |
+| `currency` | Währung |
+| `debit_credit` | "S" (Soll) / "H" (Haben) |
+| `booking_text` | Buchungstext |
+| `document_type` | Belegart (KR, DR, KZ, DZ, SA, AB) |
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Jeder Beleg ist ausgeglichen (Summe Soll = Summe Haben).
+
+### Kontenlogik
+
+Die Kontenbereiche und das Kontenverzeichnis sind in `src/lib/data/account-master.ts` definiert und dokumentiert.
