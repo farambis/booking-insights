@@ -140,6 +140,10 @@ export const GL_ACCOUNTS: GlAccount[] = [
   { number: "090200", name: "Kasse", category: "Bank & cash" },
 ];
 
+export function lookupAccountName(glAccount: string): string | null {
+  return GL_ACCOUNTS.find((a) => a.number === glAccount)?.name ?? null;
+}
+
 export interface CostCenter {
   id: string;
   name: string;
@@ -152,6 +156,11 @@ export const COST_CENTERS: CostCenter[] = [
   { id: "4000", name: "IT" },
   { id: "5000", name: "Management" },
 ];
+
+export function lookupCostCenterName(costCenter: string | null): string | null {
+  if (!costCenter) return null;
+  return COST_CENTERS.find((c) => c.id === costCenter)?.name ?? null;
+}
 
 export interface DocumentType {
   code: string;

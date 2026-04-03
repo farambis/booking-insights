@@ -139,6 +139,31 @@ export function queryBookings(
   };
 }
 
+/** Build status counts from all bookings in a single pass */
+export function buildCounts(bookings: BookingListItem[]): {
+  totalDocuments: number;
+  criticalCount: number;
+  warningCount: number;
+  cleanCount: number;
+} {
+  let criticalCount = 0;
+  let warningCount = 0;
+  let cleanCount = 0;
+
+  for (const b of bookings) {
+    if (b.status === "critical") criticalCount++;
+    else if (b.status === "warning") warningCount++;
+    else cleanCount++;
+  }
+
+  return {
+    totalDocuments: bookings.length,
+    criticalCount,
+    warningCount,
+    cleanCount,
+  };
+}
+
 /** Build dashboard summary from all bookings */
 export function buildDashboardSummary(
   bookings: BookingDetail[],

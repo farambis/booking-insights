@@ -1,28 +1,17 @@
 import type { JournalEntryLine } from "@/lib/data/journal-entry.types";
-import type { BookingFlag } from "./booking.types";
+import type { FlagMap } from "./flag-utils";
+import { flagKey, addFlag } from "./flag-utils";
 import { normalizeForComparison } from "./text-anomaly-detector";
-
-/** Map key format: "documentId:lineId" */
-type FlagMap = Map<string, BookingFlag[]>;
-
-function flagKey(documentId: string, lineId: number): string {
-  return `${documentId}:${lineId}`;
-}
-
-function addFlag(map: FlagMap, key: string, flag: BookingFlag): void {
-  const existing = map.get(key) ?? [];
-  existing.push(flag);
-  map.set(key, existing);
-}
-
-const now = new Date().toISOString();
 
 /**
  * Detect amounts that are statistical outliers within their GL account.
  * Groups lines by gl_account, computes mean and standard deviation,
  * and flags lines where the amount exceeds 2.5 standard deviations.
  */
-export function detectUnusualAmounts(lines: JournalEntryLine[]): FlagMap {
+export function detectUnusualAmounts(
+  lines: JournalEntryLine[],
+  detectedAt: string = new Date().toISOString(),
+): FlagMap {
   const result: FlagMap = new Map();
 
   // Group lines by gl_account
@@ -52,7 +41,7 @@ export function detectUnusualAmounts(lines: JournalEntryLine[]): FlagMap {
           severity: "warning",
           explanation: `Amount ${line.amount.toFixed(2)} on account ${account} is ${zScore.toFixed(1)} standard deviations from the mean (${mean.toFixed(2)})`,
           confidence: Math.min(zScore / 5, 1),
-          detectedAt: now,
+          detectedAt,
           relatedDocumentId: null,
         });
       }
@@ -72,7 +61,10 @@ function isRoundNumber(amount: number): boolean {
  * non-round amounts. Flags lines where the amount is divisible by 1000,
  * >= 5000, and the account has < 20% round amounts overall.
  */
-export function detectRoundNumberAnomalies(lines: JournalEntryLine[]): FlagMap {
+export function detectRoundNumberAnomalies(
+  lines: JournalEntryLine[],
+  detectedAt: string = new Date().toISOString(),
+): FlagMap {
   const result: FlagMap = new Map();
 
   // Group lines by gl_account
@@ -99,7 +91,7 @@ export function detectRoundNumberAnomalies(lines: JournalEntryLine[]): FlagMap {
           severity: "warning",
           explanation: `Amount ${line.amount.toFixed(2)} is a suspiciously round number (only ${Math.round(roundRatio * 100)}% of amounts on this account are round)`,
           confidence: 0.6,
-          detectedAt: now,
+          detectedAt,
           relatedDocumentId: null,
         });
       }
@@ -113,7 +105,10 @@ export function detectRoundNumberAnomalies(lines: JournalEntryLine[]): FlagMap {
  * Detect pattern breaks: when a booking text that normally goes to one
  * cost center suddenly goes to a different one.
  */
-export function detectPatternBreaks(lines: JournalEntryLine[]): FlagMap {
+export function detectPatternBreaks(
+  lines: JournalEntryLine[],
+  detectedAt: string = new Date().toISOString(),
+): FlagMap {
   const result: FlagMap = new Map();
 
   // Cost center pattern breaks:
@@ -162,7 +157,7 @@ export function detectPatternBreaks(lines: JournalEntryLine[]): FlagMap {
           severity: "warning",
           explanation: `"${text}" is usually posted to cost center ${dominantCC} (${dominantCount}/${total} times) but this line uses ${cc}`,
           confidence: dominantCount / total,
-          detectedAt: now,
+          detectedAt,
           relatedDocumentId: null,
         });
       }
@@ -176,7 +171,10 @@ export function detectPatternBreaks(lines: JournalEntryLine[]): FlagMap {
  * Detect documents where all lines are on the same side (all debit or
  * all credit). A properly balanced document should have both S and H lines.
  */
-export function detectMissingCounterparts(lines: JournalEntryLine[]): FlagMap {
+export function detectMissingCounterparts(
+  lines: JournalEntryLine[],
+  detectedAt: string = new Date().toISOString(),
+): FlagMap {
   const result: FlagMap = new Map();
 
   // Group lines by document_id
@@ -202,7 +200,7 @@ export function detectMissingCounterparts(lines: JournalEntryLine[]): FlagMap {
         severity: "critical",
         explanation: `Document ${line.document_id} has all lines on the ${side} side — no counterpart entry found`,
         confidence: 0.95,
-        detectedAt: now,
+        detectedAt,
         relatedDocumentId: null,
       });
     }

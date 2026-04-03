@@ -47,13 +47,13 @@ export default async function BookingsPage(props: {
     searchParams as Record<string, string | string[] | undefined>,
   );
 
-  const [result, summary] = await Promise.all([
+  const [result, counts] = await Promise.all([
     bookingService.getBookings(filters),
-    bookingService.getDashboardSummary(),
+    bookingService.getCounts(),
   ]);
 
-  const totalDocuments = summary.totalDocuments;
-  const flaggedCount = summary.criticalCount + summary.warningCount;
+  const totalDocuments = counts.totalDocuments;
+  const flaggedCount = counts.criticalCount + counts.warningCount;
 
   // Pre-compute sort URLs for each column (serializable strings, no functions)
   const sortUrls = Object.fromEntries(
