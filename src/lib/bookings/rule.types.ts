@@ -34,6 +34,7 @@ export interface RuleScope {
   taxCode?: string;
   costCenter?: string;
   documentType?: string;
+  accountRange?: string;
   textPattern?: string;
   amountMin?: number;
   amountMax?: number;

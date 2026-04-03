@@ -228,6 +228,7 @@ describe("mineDocumentTypeAccountRules", () => {
     expect(rules[0].title).toContain("KR");
     expect(rules[0].title).toContain("Operating expenses");
     expect(rules[0].scope.documentType).toBe("KR");
+    expect(rules[0].scope.accountRange).toBe("Operating expenses");
   });
 
   it("does not emit a rule when no range dominates", () => {
