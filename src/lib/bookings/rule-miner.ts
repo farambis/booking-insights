@@ -59,7 +59,17 @@ function buildEvidence(
   lines: JournalEntryLine[],
   note: string,
 ): RuleEvidence[] {
-  return lines.slice(0, MAX_EVIDENCE).map((l) => ({
+  // Deduplicate by document_id so examples show different documents
+  const seen = new Set<string>();
+  const unique: JournalEntryLine[] = [];
+  for (const line of lines) {
+    if (!seen.has(line.document_id)) {
+      seen.add(line.document_id);
+      unique.push(line);
+    }
+    if (unique.length >= MAX_EVIDENCE) break;
+  }
+  return unique.map((l) => ({
     documentId: l.document_id,
     postingDate: l.posting_date,
     bookingText: l.booking_text,
