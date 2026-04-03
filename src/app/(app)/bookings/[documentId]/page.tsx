@@ -90,6 +90,40 @@ export default async function BookingDetailPage(props: {
         <div className="space-y-6 lg:col-span-3">
           <BookingDataTable booking={booking} />
 
+          {booking.flags.length === 0 && (
+            <div className="border-clean-border bg-clean-bg rounded-lg border p-4">
+              <div className="flex items-center gap-2">
+                <svg
+                  className="text-clean h-5 w-5"
+                  viewBox="0 0 16 16"
+                  fill="none"
+                  aria-hidden="true"
+                >
+                  <circle
+                    cx="8"
+                    cy="8"
+                    r="7"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                  />
+                  <path
+                    d="M5 8l2 2 4-4"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+                <span className="text-clean text-sm font-semibold">
+                  No flags detected
+                </span>
+              </div>
+              <p className="mt-1 pl-7 text-sm text-neutral-600">
+                This document passed all checks.
+              </p>
+            </div>
+          )}
+
           {booking.flags.length > 0 && (
             <div>
               <h2 className="mb-3 text-sm font-semibold text-neutral-900">
