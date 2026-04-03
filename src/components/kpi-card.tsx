@@ -1,8 +1,11 @@
+import Link from "next/link";
+
 interface KpiCardProps {
   label: string;
   formattedValue: string;
   subtitle: string | null;
   variant: "default" | "critical" | "warning" | "clean";
+  href?: string;
 }
 
 const VALUE_STYLES: Record<KpiCardProps["variant"], string> = {
@@ -92,9 +95,10 @@ export function KpiCard({
   formattedValue,
   subtitle,
   variant,
+  href,
 }: KpiCardProps) {
-  return (
-    <div className="rounded-lg border border-neutral-200 bg-white p-5 shadow-sm">
+  const content = (
+    <>
       <div className="flex items-center justify-between">
         <span className="text-xs font-medium text-neutral-500">{label}</span>
         {ICONS[variant]}
@@ -109,6 +113,23 @@ export function KpiCard({
           {subtitle}
         </p>
       )}
+    </>
+  );
+
+  if (href) {
+    return (
+      <Link
+        href={href}
+        className="block rounded-lg border border-neutral-200 bg-white p-5 shadow-sm transition-colors hover:bg-neutral-50"
+      >
+        {content}
+      </Link>
+    );
+  }
+
+  return (
+    <div className="rounded-lg border border-neutral-200 bg-white p-5 shadow-sm">
+      {content}
     </div>
   );
 }
