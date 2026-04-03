@@ -102,7 +102,7 @@ describe("booking-queries", () => {
         status: "critical",
         flags: [
           {
-            type: "duplicate_entry",
+            type: "duplicate_booking",
             severity: "critical",
             explanation: "dup",
             confidence: 0.9,
@@ -383,7 +383,7 @@ describe("booking-queries", () => {
         glAccount: "060000",
         flags: [
           {
-            type: "duplicate_entry",
+            type: "duplicate_booking",
             severity: "critical",
             explanation: "",
             confidence: 0.9,
@@ -434,7 +434,7 @@ describe("booking-queries", () => {
       const summary = buildDashboardSummary(bookings);
       expect(summary.flagDistribution).toHaveLength(2);
       expect(
-        summary.flagDistribution.find((f) => f.type === "duplicate_entry")
+        summary.flagDistribution.find((f) => f.type === "duplicate_booking")
           ?.count,
       ).toBe(1);
     });
