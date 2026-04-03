@@ -54,10 +54,10 @@ Jeder Beleg ist ausgeglichen (Summe Soll = Summe Haben).
 
 Die Kontenbereiche und das Kontenverzeichnis sind in `src/lib/data/account-master.ts` definiert und dokumentiert.
 
-## Exercise 2: Text-Based Anomaly Detection
+## Exercise 2: Text-Based Anomaly Detection & Duplicate Detection
 
-Erkennung auffälliger Buchungstexte mittels Levenshtein-Distanz und Häufigkeitsanalyse. Details siehe [docs/exercise-2.md](docs/exercise-2.md).
+Erkennung auffälliger Buchungstexte mittels Levenshtein-Distanz und Häufigkeitsanalyse, sowie Multi-Signal Duplicate Booking Detection mit gewichtetem Scoring über 9 Kriterien (Betrag, Vendor, Konto, Gegenkonto, Datum, Buchungstext, Belegart, Kostenstelle, Steuercode). Automatisch generierte Buchungsregeln aus den bestehenden Transaktionsdaten. Details siehe [docs/exercise-2.md](docs/exercise-2.md).
 
-## Exercise 3: Booking Manual / Rule Suggestions
+## Exercise 3: Context Engineering
 
-Automatisch generierte Buchungsregeln aus den bestehenden Transaktionsdaten. Details siehe [docs/exercise-3.md](docs/exercise-3.md).
+Architektur-Sketch für kontextbasierte Erklärbarkeit: Nicht nur Zahlen zeigen, sondern Fragen wie "Warum wurde dieser Rabatt gewährt?" oder "Warum ist diese Kennzahl so berechnet?" beantworten. Zwei-Stufen-Retrieval (deterministischer Lookup + semantische Suche), Evidence-first Ansatz. Details siehe [docs/context-engineering.md](docs/context-engineering.md).
