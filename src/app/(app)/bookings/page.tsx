@@ -20,6 +20,12 @@ const ALL_FLAG_TYPES: { id: FlagType; label: string }[] = [
   { id: "unusual_amount", label: flagTypeLabel("unusual_amount") },
   { id: "pattern_break", label: flagTypeLabel("pattern_break") },
   { id: "round_number_anomaly", label: flagTypeLabel("round_number_anomaly") },
+  { id: "text_typo", label: flagTypeLabel("text_typo") },
+  { id: "unusual_text_account", label: flagTypeLabel("unusual_text_account") },
+  {
+    id: "text_duplicate_posting",
+    label: flagTypeLabel("text_duplicate_posting"),
+  },
 ];
 
 const ACCOUNTS = GL_ACCOUNTS.map((a) => ({ number: a.number, name: a.name }));

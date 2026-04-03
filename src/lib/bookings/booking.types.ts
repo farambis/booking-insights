@@ -7,7 +7,10 @@ export type FlagType =
   | "missing_counterpart"
   | "unusual_amount"
   | "pattern_break"
-  | "round_number_anomaly";
+  | "round_number_anomaly"
+  | "text_typo"
+  | "unusual_text_account"
+  | "text_duplicate_posting";
 
 /** A detected flag on a booking */
 export interface BookingFlag {
