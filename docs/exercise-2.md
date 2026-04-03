@@ -105,3 +105,22 @@ Detection runs once at app startup. Results are cached for the lifetime of the s
 | Unusual combo threshold | < 10% of text's total | Distinguishes rare from common pairings |
 | Date proximity for duplicates | 2 days | Accounting duplicates are typically posted within a day or two |
 | Signature match | Exact | Start strict, relax to Jaccard >= 0.8 if needed |
+
+## Pull Request & Commit History
+
+### PR [#1](https://github.com/farambis/booking-insights/pull/1) — Add text-based anomaly detection for booking texts (closed)
+
+Initial implementation of all three detection rules, wired into the existing flag engine. Follow-up fixes were applied as separate commits.
+
+**Known issues identified during code review:**
+- **99.8% false positive rate in typo detector** — date-suffixed texts like "Ausgangsrechnung 2025-01-15" vs "2025-01-16" differ by 1-2 characters (the date digits), causing 1,221 false positive pairs out of 1,223 total.
+- **Missing flag types in filter whitelist** — new flag types were not added to `VALID_FLAG_TYPES` in `filter-params.ts`, so the flag dropdown filter silently ignored them.
+- **Frozen timestamp** — `detectedAt` set at module scope instead of per detection call.
+- **Double-flagging** — a line close to two different texts gets multiple `text_typo` flags.
+- **Singleton heuristic** — when both texts in a pair appear only once, tie-breaking is arbitrary.
+
+### Follow-up commits
+
+1. **`9fb8b9a`** — Fix: add new text flag types to `VALID_FLAG_TYPES` whitelist. The three new types (`text_typo`, `unusual_text_account`, `text_duplicate_posting`) were missing from the URL parameter parser, so selecting them in the flag dropdown had no effect.
+
+2. **`cd5fc78`** — Normalize booking texts before comparison to reduce false positives. Added `normalizeForComparison()` which strips trailing ISO dates and numbers before Levenshtein comparison. Texts like "Ausgangsrechnung 2025-01-15" and "Ausgangsrechnung 2025-01-16" now normalize to the same base string and are skipped. Same normalization applied to duplicate posting signatures. Eliminated all 1,221 false positives while preserving the 2 genuine typo detections.
