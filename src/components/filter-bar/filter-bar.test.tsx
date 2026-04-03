@@ -30,7 +30,7 @@ const accounts = [
 ];
 
 const flagTypes: { id: FlagType; label: string }[] = [
-  { id: "duplicate_entry", label: "Duplicate Entry" },
+  { id: "duplicate_booking", label: "Duplicate Booking" },
   { id: "unusual_amount", label: "Unusual Amount" },
 ];
 

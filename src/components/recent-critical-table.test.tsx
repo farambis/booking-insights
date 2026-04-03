@@ -17,7 +17,7 @@ const bookings: BookingListItem[] = [
     status: "critical",
     flags: [
       {
-        type: "duplicate_entry",
+        type: "duplicate_booking",
         severity: "critical",
         explanation: "Duplicate",
         confidence: 0.9,

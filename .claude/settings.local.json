@@ -31,7 +31,29 @@
       "Bash(LEFTHOOK=0 git merge --ff-only feature/text-anomaly-detection)",
       "Bash(LEFTHOOK=0 git reset:*)",
       "Bash(LEFTHOOK=0 git add -A)",
-      "Bash(LEFTHOOK=0 git commit -m \"Add text-based anomaly detection for journal entry bookings\")"
+      "Bash(LEFTHOOK=0 git commit -m \"Add text-based anomaly detection for journal entry bookings\")",
+      "Bash(LEFTHOOK=0 git commit -m \"Fix: add new text flag types to VALID_FLAG_TYPES whitelist\")",
+      "Bash(LEFTHOOK=0 git add src/lib/bookings/text-anomaly-detector.ts src/lib/bookings/text-anomaly-detector.test.ts)",
+      "Bash(gh pr:*)",
+      "Bash(LEFTHOOK=0 git add docs/exercise-2.md)",
+      "Bash(LEFTHOOK=0 git rebase:*)",
+      "Bash(LEFTHOOK=0 git add src/components/manual-rule-card.tsx)",
+      "Bash(LEFTHOOK=0 git commit -m \"Fix: add font-mono to evidence document IDs in manual rule cards\")",
+      "Bash(LEFTHOOK=0 git add src/lib/bookings/rule-miner.ts src/lib/bookings/rule-miner.test.ts)",
+      "Bash(LEFTHOOK=0 git add docs/exercise-3.md README.md)",
+      "Bash(LEFTHOOK=0 git commit -m \"Document Exercise 3: Booking Manual with PR history and follow-up fixes\")",
+      "Bash(LEFTHOOK=0 git add src/components/filter-bar/filter-bar.tsx)",
+      "Bash(LEFTHOOK=0 git add src/lib/bookings/text-anomaly-detector.ts)",
+      "Bash(LEFTHOOK=0 git add src/lib/bookings/local-booking-service.ts)",
+      "Bash(LEFTHOOK=0 git add src/lib/data/generate-entries.ts src/lib/data/journal-entries.json)",
+      "Bash(LEFTHOOK=0 git add src/components/booking-table.tsx src/components/booking-table.test.tsx src/lib/bookings/format.ts)",
+      "Bash(vercel --version)",
+      "Bash(vercel whoami:*)",
+      "Bash(vercel link:*)",
+      "Bash(vercel project:*)",
+      "Bash(vercel ls:*)",
+      "Bash(gh api:*)",
+      "Bash(gh run:*)"
     ]
   }
 }

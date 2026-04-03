@@ -3,8 +3,8 @@ import { render, screen } from "@testing-library/react";
 import { FlagExplanationCard } from "./flag-explanation-card";
 
 const criticalFlag = {
-  type: "duplicate_entry" as const,
-  label: "Duplicate Entry",
+  type: "duplicate_booking" as const,
+  label: "Duplicate Booking",
   explanation:
     "This booking appears to be a duplicate of 5000000141 (same account, similar amount within 5%, posted within 2 days).",
   confidencePercent: 87,
@@ -22,7 +22,7 @@ const warningFlag = {
 describe("FlagExplanationCard", () => {
   it("renders the flag type label", () => {
     render(<FlagExplanationCard flag={criticalFlag} severity="critical" />);
-    expect(screen.getByText("Duplicate Entry")).toBeInTheDocument();
+    expect(screen.getByText("Duplicate Booking")).toBeInTheDocument();
   });
 
   it("renders the explanation text", () => {

@@ -29,7 +29,6 @@ export function formatDateVerbose(isoDate: string): string {
 }
 
 const FLAG_TYPE_LABELS: Record<FlagType, string> = {
-  duplicate_entry: "Duplicate Entry",
   duplicate_booking: "Duplicate Booking",
   missing_counterpart: "Missing Counterpart",
   unusual_amount: "Unusual Amount",
@@ -46,7 +45,6 @@ export function flagTypeLabel(type: FlagType): string {
 }
 
 const FLAG_TYPE_SHORT_LABELS: Record<FlagType, string> = {
-  duplicate_entry: "Duplicate",
   duplicate_booking: "Duplicate",
   missing_counterpart: "Missing",
   unusual_amount: "Amount",

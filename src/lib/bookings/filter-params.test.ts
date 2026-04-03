@@ -43,16 +43,16 @@ describe("filter-params", () => {
 
     it("parses comma-separated flag types", () => {
       const result = parseBookingFilters({
-        flags: "duplicate_entry,unusual_amount",
+        flags: "duplicate_booking,unusual_amount",
       });
-      expect(result.flagTypes).toEqual(["duplicate_entry", "unusual_amount"]);
+      expect(result.flagTypes).toEqual(["duplicate_booking", "unusual_amount"]);
     });
 
     it("filters out invalid flag types", () => {
       const result = parseBookingFilters({
-        flags: "duplicate_entry,bad_flag",
+        flags: "duplicate_booking,bad_flag",
       });
-      expect(result.flagTypes).toEqual(["duplicate_entry"]);
+      expect(result.flagTypes).toEqual(["duplicate_booking"]);
     });
 
     it("parses numeric amount filters", () => {
@@ -138,9 +138,9 @@ describe("filter-params", () => {
 
     it("serializes flag types as comma-separated", () => {
       const params = serializeBookingFilters({
-        flagTypes: ["duplicate_entry", "unusual_amount"],
+        flagTypes: ["duplicate_booking", "unusual_amount"],
       });
-      expect(params.get("flags")).toBe("duplicate_entry,unusual_amount");
+      expect(params.get("flags")).toBe("duplicate_booking,unusual_amount");
     });
 
     it("serializes amount range", () => {
@@ -185,7 +185,7 @@ describe("filter-params", () => {
       const original: BookingFilters = {
         search: "Mueller",
         status: "critical",
-        flagTypes: ["duplicate_entry", "unusual_amount"],
+        flagTypes: ["duplicate_booking", "unusual_amount"],
         account: "060000",
         amountMin: 500,
         amountMax: 5000,
