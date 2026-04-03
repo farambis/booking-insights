@@ -41,14 +41,9 @@ export function ManualRuleCard({ rule }: ManualRuleCardProps) {
 
   return (
     <div className="rounded-lg border border-neutral-200 bg-white p-5">
-      <div className="flex items-start justify-between">
-        <span className="text-xs font-medium tracking-wide text-neutral-500 uppercase">
-          {CATEGORY_LABELS[rule.category]}
-        </span>
-        <span className="text-sm font-medium text-neutral-700">
-          {confidencePercent}%
-        </span>
-      </div>
+      <span className="text-xs font-medium tracking-wide text-neutral-500 uppercase">
+        {CATEGORY_LABELS[rule.category]}
+      </span>
 
       <h3 className="mt-2 text-lg font-semibold text-neutral-900">
         {rule.title}
@@ -56,25 +51,29 @@ export function ManualRuleCard({ rule }: ManualRuleCardProps) {
 
       <p className="mt-1 text-sm text-neutral-600">{rule.description}</p>
 
-      <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-neutral-100">
-        <div
-          className={`h-full rounded-full ${confidenceColor(rule.confidence)}`}
-          style={{ width: `${confidencePercent}%` }}
-        />
+      <div className="mt-3">
+        <div className="flex items-center justify-between text-xs text-neutral-500">
+          <span>Match rate</span>
+          <span>
+            {rule.supportCount} of {rule.totalEvaluated} bookings (
+            {supportPercent}%)
+          </span>
+        </div>
+        <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-neutral-100">
+          <div
+            className={`h-full rounded-full ${confidenceColor(rule.supportRatio)}`}
+            style={{ width: `${supportPercent}%` }}
+          />
+        </div>
       </div>
-
-      <p className="mt-2 text-xs text-neutral-500">
-        Based on {rule.supportCount} of {rule.totalEvaluated} bookings (
-        {supportPercent}%)
-      </p>
 
       {rule.evidence.length > 0 && (
         <div className="mt-3">
           <p className="text-xs font-medium text-neutral-500">Examples:</p>
           <div className="mt-1 flex flex-wrap gap-2">
-            {rule.evidence.map((e) => (
+            {rule.evidence.map((e, i) => (
               <a
-                key={e.documentId}
+                key={`${e.documentId}-${i}`}
                 href={`/bookings/${e.documentId}`}
                 className="font-mono text-xs text-blue-600 underline-offset-2 hover:underline"
               >
