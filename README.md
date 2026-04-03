@@ -4,6 +4,11 @@ Financial analysis app based on SAP-style journal entry data. Detects red flags,
 
 **Live Demo:** https://booking-insights-farambis-projects.vercel.app
 
+## Assumptions
+
+- **Account ranges:** The chart of accounts follows a German mid-size company structure with 6-digit zero-padded GL accounts in 9 ranges (010000–019999 Assets through 090000–099999 Bank & Cash). All flag detection rules (expected debit/credit side, pattern breaks, amount ranges) assume these ranges. See [`src/lib/data/account-master.ts`](src/lib/data/account-master.ts) for the full definition.
+- **Five issues + two fixes per feature:** Each exercise PR identifies at least 5 issues during code/UX/architecture review, of which at least 2 are fixed in follow-up commits. The review comments are documented on the PRs, and the fix commits are linked in the Exercise 2 section below.
+
 ## Booking Data
 
 The app works with generated SAP FI journal entries. Details on the data model, generation, and chart of accounts are in [src/lib/data/README.md](src/lib/data/README.md).

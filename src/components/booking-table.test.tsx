@@ -220,6 +220,23 @@ describe("BookingTable", () => {
     expect(amountCell).not.toBeNull();
   });
 
+  it("does not crash when booking has non-clean status but empty flags", () => {
+    const booking = makeBooking({
+      status: "warning",
+      flags: [],
+    });
+    expect(() =>
+      render(
+        <BookingTable
+          bookings={[booking]}
+          currentSort={defaultSort}
+          sortUrls={defaultSortUrls}
+          baseDetailUrl="/bookings"
+        />,
+      ),
+    ).not.toThrow();
+  });
+
   it("shows sort direction indicator on active column", () => {
     render(
       <BookingTable

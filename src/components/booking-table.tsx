@@ -142,7 +142,7 @@ export function BookingTable({
                 {formatAmount(booking.amount, booking.currency)}
               </td>
               <td className="px-3 py-2.5 text-left">
-                {booking.status !== "clean" && (
+                {booking.status !== "clean" && booking.flags.length > 0 && (
                   <span className="flex items-center gap-1.5">
                     <StatusBadge status={booking.status} />
                     <span className="text-xs text-neutral-500">
