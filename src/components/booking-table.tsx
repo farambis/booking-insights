@@ -147,7 +147,8 @@ export function BookingTable({
                     <StatusBadge status={booking.status} />
                     <span className="text-xs text-neutral-500">
                       {flagTypeShortLabel(booking.flags[0].type)}
-                      {booking.flags.length > 1 && ` +${booking.flags.length - 1}`}
+                      {booking.flags.length > 1 &&
+                        ` +${booking.flags.length - 1}`}
                     </span>
                   </span>
                 )}

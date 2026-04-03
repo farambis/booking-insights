@@ -89,7 +89,10 @@ export function detectTypos(lines: JournalEntryLine[]): FlagMap {
       if (countA === countB) {
         // Equal frequency — flag both sides with reduced confidence
         const reducedConfidence = confidence * 0.5;
-        for (const [suspect, other] of [[a, b], [b, a]] as const) {
+        for (const [suspect, other] of [
+          [a, b],
+          [b, a],
+        ] as const) {
           for (const line of textLines.get(suspect)!) {
             addFlag(result, flagKey(line.document_id, line.line_id), {
               type: "text_typo",
@@ -102,8 +105,7 @@ export function detectTypos(lines: JournalEntryLine[]): FlagMap {
           }
         }
       } else {
-        const [typoText, correctText] =
-          countA < countB ? [a, b] : [b, a];
+        const [typoText, correctText] = countA < countB ? [a, b] : [b, a];
         for (const line of textLines.get(typoText)!) {
           addFlag(result, flagKey(line.document_id, line.line_id), {
             type: "text_typo",

@@ -580,10 +580,18 @@ export function generateJournalEntries(): GenerationResult {
   // 4. Additional unusual text-account combos to reach ~8% warning rate
   // Find lines with expense texts posted to their normal accounts and
   // swap some to wrong accounts
-  const unusualSwaps: { text: string; wrongAccount: string; wrongName: string }[] = [
+  const unusualSwaps: {
+    text: string;
+    wrongAccount: string;
+    wrongName: string;
+  }[] = [
     { text: "Miete Büro", wrongAccount: "050000", wrongName: "Wareneinkauf" },
     { text: "Gehälter", wrongAccount: "070300", wrongName: "Bürobedarf" },
-    { text: "Reisekosten Vertrieb", wrongAccount: "060000", wrongName: "Gehälter" },
+    {
+      text: "Reisekosten Vertrieb",
+      wrongAccount: "060000",
+      wrongName: "Gehälter",
+    },
     { text: "Steuerberater", wrongAccount: "070600", wrongName: "Marketing" },
   ];
 
@@ -606,6 +614,155 @@ export function generateJournalEntries(): GenerationResult {
         `UNUSUAL: Document ${allLines[idx].document_id} line ${allLines[idx].line_id}: "${swap.text}" posted to ${swap.wrongAccount} (${swap.wrongName}) instead of typical account ${origAccount}`,
       );
     }
+  }
+
+  // 5. Unusual amounts: inject 3 lines with amounts 5-10x the normal range
+  const unusualAmountAccounts = ["070000", "070300", "070600"];
+  for (const targetAccount of unusualAmountAccounts) {
+    const idx = allLines.findIndex(
+      (l) =>
+        l.gl_account === targetAccount &&
+        l.debit_credit === "S" &&
+        !anomalies.some((a) => a.includes(l.document_id)),
+    );
+    if (idx !== -1) {
+      const origAmount = allLines[idx].amount;
+      const multiplier = 5 + Math.floor(rng() * 6); // 5-10x
+      const newAmount = round2(origAmount * multiplier);
+      allLines[idx] = { ...allLines[idx], amount: newAmount };
+
+      // Rebalance the document: adjust the credit line
+      const docLines = allLines.filter(
+        (l) => l.document_id === allLines[idx].document_id,
+      );
+      const debitSum = docLines
+        .filter((l) => l.debit_credit === "S")
+        .reduce((s, l) => s + l.amount, 0);
+      const creditLines = docLines.filter((l) => l.debit_credit === "H");
+      if (creditLines.length > 0) {
+        const otherCredits = creditLines
+          .slice(0, -1)
+          .reduce((s, l) => s + l.amount, 0);
+        creditLines[creditLines.length - 1].amount = round2(
+          debitSum - otherCredits,
+        );
+      }
+
+      anomalies.push(
+        `UNUSUAL_AMOUNT: Document ${allLines[idx].document_id} line ${allLines[idx].line_id}: Amount ${newAmount} on account ${targetAccount} (${multiplier}x normal)`,
+      );
+    }
+  }
+
+  // 6. Round number anomalies: inject 3 lines with suspiciously round amounts
+  const roundAmounts = [10000, 15000, 20000];
+  let roundIdx = 0;
+  for (const roundAmount of roundAmounts) {
+    const idx = allLines.findIndex(
+      (l, i) =>
+        i > roundIdx &&
+        l.debit_credit === "S" &&
+        l.gl_account.startsWith("07") &&
+        l.amount < 5000 &&
+        !anomalies.some((a) => a.includes(l.document_id)),
+    );
+    if (idx !== -1) {
+      roundIdx = idx;
+      allLines[idx] = { ...allLines[idx], amount: roundAmount };
+
+      // Rebalance the document
+      const docLines = allLines.filter(
+        (l) => l.document_id === allLines[idx].document_id,
+      );
+      const debitSum = docLines
+        .filter((l) => l.debit_credit === "S")
+        .reduce((s, l) => s + l.amount, 0);
+      const creditLines = docLines.filter((l) => l.debit_credit === "H");
+      if (creditLines.length > 0) {
+        const otherCredits = creditLines
+          .slice(0, -1)
+          .reduce((s, l) => s + l.amount, 0);
+        creditLines[creditLines.length - 1].amount = round2(
+          debitSum - otherCredits,
+        );
+      }
+
+      anomalies.push(
+        `ROUND_NUMBER: Document ${allLines[idx].document_id} line ${allLines[idx].line_id}: Round amount ${roundAmount} on account ${allLines[idx].gl_account}`,
+      );
+    }
+  }
+
+  // 7. Pattern breaks: inject 3 lines where a recurring text goes to
+  // a different cost center than usual
+  const patternBreaks = [
+    { text: "Büromaterial", wrongCC: "3000" },
+    { text: "Stromkosten", wrongCC: "2000" },
+    { text: "Telefonkosten", wrongCC: "4000" },
+  ];
+  for (const pb of patternBreaks) {
+    const idx = allLines.findIndex(
+      (l) =>
+        l.booking_text === pb.text &&
+        l.cost_center !== null &&
+        l.cost_center !== pb.wrongCC &&
+        !anomalies.some((a) => a.includes(l.document_id)),
+    );
+    if (idx !== -1) {
+      const origCC = allLines[idx].cost_center;
+      allLines[idx] = { ...allLines[idx], cost_center: pb.wrongCC };
+      anomalies.push(
+        `PATTERN_BREAK: Document ${allLines[idx].document_id} line ${allLines[idx].line_id}: "${pb.text}" posted to cost center ${pb.wrongCC} instead of usual ${origCC}`,
+      );
+    }
+  }
+
+  // 8. Missing counterparts: inject 2 documents where all lines are debit-only
+  for (let mc = 0; mc < 2; mc++) {
+    const newDocId = String(docNumber++);
+    const date = randomDate();
+    const month = parseInt(date.split("-")[1], 10);
+    const acct = getAccountByCategory(rng, "Operating expenses", weighted);
+    const amount = round2(randInt(rng, 500, 3000) + rng());
+
+    // Two debit lines, no credit line
+    allLines.push({
+      company_code: "1000",
+      posting_date: date,
+      document_id: newDocId,
+      line_id: 1,
+      gl_account: acct.number,
+      cost_center: assignCostCenter(rng, acct),
+      amount,
+      currency: "EUR",
+      debit_credit: "S",
+      booking_text: getBookingText(rng, acct, "SA", month),
+      vendor_id: null,
+      customer_id: null,
+      tax_code: null,
+      document_type: "SA",
+    });
+    allLines.push({
+      company_code: "1000",
+      posting_date: date,
+      document_id: newDocId,
+      line_id: 2,
+      gl_account: getAccountByCategory(rng, "Operating expenses", weighted)
+        .number,
+      cost_center: pick(rng, COST_CENTERS).id,
+      amount: round2(amount * 0.5),
+      currency: "EUR",
+      debit_credit: "S",
+      booking_text: "Umbuchung",
+      vendor_id: null,
+      customer_id: null,
+      tax_code: null,
+      document_type: "SA",
+    });
+
+    anomalies.push(
+      `MISSING_COUNTERPART: Document ${newDocId} has only debit lines (no credit counterpart)`,
+    );
   }
 
   // Sort by date, then document_id, then line_id

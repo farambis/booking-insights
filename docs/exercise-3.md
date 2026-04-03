@@ -40,14 +40,14 @@ Derive a compact set of booking rules from existing transaction data. Each rule 
 
 ### New Files
 
-| File | Purpose |
-|------|---------|
-| `src/lib/bookings/rule.types.ts` | TypeScript types (BookingRule, RuleEvidence, RuleScope, BookingManual) |
-| `src/lib/bookings/rule-miner.ts` | Five miners + orchestrator |
-| `src/lib/bookings/rule-miner.test.ts` | Tests for all miners |
-| `src/components/manual-rule-card.tsx` | Server component for rule card display |
-| `src/app/(app)/manual/page.tsx` | Booking Manual page |
-| `src/app/(app)/manual/loading.tsx` | Skeleton loading state |
+| File                                  | Purpose                                                                |
+| ------------------------------------- | ---------------------------------------------------------------------- |
+| `src/lib/bookings/rule.types.ts`      | TypeScript types (BookingRule, RuleEvidence, RuleScope, BookingManual) |
+| `src/lib/bookings/rule-miner.ts`      | Five miners + orchestrator                                             |
+| `src/lib/bookings/rule-miner.test.ts` | Tests for all miners                                                   |
+| `src/components/manual-rule-card.tsx` | Server component for rule card display                                 |
+| `src/app/(app)/manual/page.tsx`       | Booking Manual page                                                    |
+| `src/app/(app)/manual/loading.tsx`    | Skeleton loading state                                                 |
 
 ### Key Design Decisions
 
@@ -58,15 +58,15 @@ Derive a compact set of booking rules from existing transaction data. Each rule 
 
 ## Thresholds
 
-| Parameter | Value | Rationale |
-|-----------|-------|-----------|
-| Min lines for tax/cost center rule | 5 | Need enough data for a meaningful pattern |
-| Min concentration (dominant value) | 80% | Below this, no clear dominant pattern |
-| Min concentration (document type) | 70% | Document types are broader, lower bar |
-| Min distinct months (recurring) | 3 | Must recur across months to be a pattern |
-| Max coefficient of variation (amounts) | 1.5 | Skip highly dispersed distributions |
-| Min confidence (final filter) | 0.4 | After sample-size adjustment |
-| Max rules | 10 | Keep the manual compact |
+| Parameter                              | Value | Rationale                                 |
+| -------------------------------------- | ----- | ----------------------------------------- |
+| Min lines for tax/cost center rule     | 5     | Need enough data for a meaningful pattern |
+| Min concentration (dominant value)     | 80%   | Below this, no clear dominant pattern     |
+| Min concentration (document type)      | 70%   | Document types are broader, lower bar     |
+| Min distinct months (recurring)        | 3     | Must recur across months to be a pattern  |
+| Max coefficient of variation (amounts) | 1.5   | Skip highly dispersed distributions       |
+| Min confidence (final filter)          | 0.4   | After sample-size adjustment              |
+| Max rules                              | 10    | Keep the manual compact                   |
 
 ## Pull Request & Commit History
 
