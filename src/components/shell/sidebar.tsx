@@ -8,6 +8,7 @@ export function Sidebar() {
       <nav className="flex flex-col gap-1">
         <SidebarNavItem href="/dashboard" label="Overview" />
         <SidebarNavItem href="/bookings" label="Bookings" />
+        <SidebarNavItem href="/manual" label="Manual" />
       </nav>
     </aside>
   );

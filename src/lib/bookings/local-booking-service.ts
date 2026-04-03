@@ -15,6 +15,8 @@ import {
 } from "./booking-queries";
 import { detectTextAnomalies } from "./text-anomaly-detector";
 import { detectDuplicateBookings } from "./duplicate-detector";
+import { mineBookingRules } from "./rule-miner";
+import type { BookingManual } from "./rule.types";
 
 function lookupAccountName(glAccount: string): string | null {
   return GL_ACCOUNTS.find((a) => a.number === glAccount)?.name ?? null;
@@ -142,6 +144,9 @@ function transformAndFlag(rawLines: JournalEntryLine[]): BookingDetail[] {
 
 // Module-level cache: transform once at import time
 const allBookings = transformAndFlag(journalEntries as JournalEntryLine[]);
+const bookingManual: BookingManual = mineBookingRules(
+  journalEntries as JournalEntryLine[],
+);
 
 export const localBookingService: BookingService = {
   async getDashboardSummary() {
@@ -159,5 +164,8 @@ export const localBookingService: BookingService = {
   },
   async getRelatedContext(documentId) {
     return findRelated(allBookings, documentId);
+  },
+  async getBookingManual() {
+    return bookingManual;
   },
 };
