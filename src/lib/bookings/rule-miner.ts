@@ -9,11 +9,11 @@ const MIN_LINES_DOMINANT = 5;
 /** Minimum concentration for tax code / cost center rules */
 const MIN_CONCENTRATION_DOMINANT = 0.8;
 
-/** Minimum concentration for document type -> account range rules */
-const MIN_CONCENTRATION_DOC_TYPE = 0.7;
+/** Minimum concentration for document type -> account range rules (debit side only) */
+const MIN_CONCENTRATION_DOC_TYPE = 0.6;
 
 /** Minimum distinct months for recurring text rules */
-const MIN_DISTINCT_MONTHS = 3;
+const MIN_DISTINCT_MONTHS = 2;
 
 /** Minimum concentration for recurring text -> account rules */
 const MIN_CONCENTRATION_RECURRING = 0.8;
@@ -25,7 +25,7 @@ const MIN_LINES_AMOUNT = 10;
 const MAX_CV_AMOUNT = 1.5;
 
 /** Minimum confidence (after sample-size adjustment) to include a rule */
-const MIN_CONFIDENCE = 0.4;
+const MIN_CONFIDENCE = 0.25;
 
 /** Maximum number of rules in the final manual */
 const MAX_RULES = 10;
@@ -204,9 +204,14 @@ export function mineDocumentTypeAccountRules(
   }
 
   for (const [docType, docTypeLines] of byDocType) {
-    // Count lines per account range
+    // Only look at debit lines — the credit side is just the contra entry
+    // and always belongs to a different range, diluting concentration
+    const debitLines = docTypeLines.filter((l) => l.debit_credit === "S");
+    if (debitLines.length < 5) continue;
+
+    // Count debit lines per account range
     const rangeCounts = new Map<string, number>();
-    for (const line of docTypeLines) {
+    for (const line of debitLines) {
       const range = lookupAccountRange(line.gl_account);
       if (!range) continue;
       rangeCounts.set(range, (rangeCounts.get(range) ?? 0) + 1);
@@ -221,20 +226,22 @@ export function mineDocumentTypeAccountRules(
       }
     }
 
-    const concentration = dominantCount / docTypeLines.length;
+    const classifiedCount = [...rangeCounts.values()].reduce((s, n) => s + n, 0);
+    if (classifiedCount === 0) continue;
+    const concentration = dominantCount / classifiedCount;
     if (concentration < MIN_CONCENTRATION_DOC_TYPE) continue;
 
     rules.push({
       id: "",
-      title: `Document type ${docType} typically uses ${dominantRange} accounts`,
-      description: `${dominantCount} of ${docTypeLines.length} lines (${Math.round(concentration * 100)}%) in document type ${docType} belong to ${dominantRange} accounts.`,
+      title: `Document type ${docType} typically debits ${dominantRange} accounts`,
+      description: `${dominantCount} of ${classifiedCount} debit lines (${Math.round(concentration * 100)}%) in document type ${docType} belong to ${dominantRange} accounts.`,
       category: "document_type_account",
-      confidence: adjustedConfidence(concentration, docTypeLines.length),
+      confidence: adjustedConfidence(concentration, classifiedCount),
       supportCount: dominantCount,
-      totalEvaluated: docTypeLines.length,
+      totalEvaluated: classifiedCount,
       supportRatio: concentration,
       evidence: buildEvidence(
-        docTypeLines.filter(
+        debitLines.filter(
           (l) => lookupAccountRange(l.gl_account) === dominantRange,
         ),
         `Account range: ${dominantRange}`,
@@ -397,11 +404,40 @@ export function mineBookingRules(lines: JournalEntryLine[]): BookingManual {
   // Filter by minimum confidence
   const filtered = allRules.filter((r) => r.confidence >= MIN_CONFIDENCE);
 
-  // Sort by confidence (already adjusted for sample size) descending
-  filtered.sort((a, b) => b.confidence - a.confidence);
+  // Category-balanced selection: pick the best rule from each category first,
+  // then fill remaining slots by confidence
+  const byCategory = new Map<string, BookingRule[]>();
+  for (const rule of filtered) {
+    const group = byCategory.get(rule.category) ?? [];
+    group.push(rule);
+    byCategory.set(rule.category, group);
+  }
+  for (const group of byCategory.values()) {
+    group.sort((a, b) => b.confidence - a.confidence);
+  }
 
-  // Take top N
-  const top = filtered.slice(0, MAX_RULES);
+  const top: BookingRule[] = [];
+  const used = new Set<BookingRule>();
+
+  // Phase 1: best rule from each category (ensures diversity)
+  for (const group of byCategory.values()) {
+    if (group.length > 0 && top.length < MAX_RULES) {
+      top.push(group[0]);
+      used.add(group[0]);
+    }
+  }
+
+  // Phase 2: fill remaining slots by confidence across all categories
+  const remaining = filtered
+    .filter((r) => !used.has(r))
+    .sort((a, b) => b.confidence - a.confidence);
+  for (const rule of remaining) {
+    if (top.length >= MAX_RULES) break;
+    top.push(rule);
+  }
+
+  // Final sort by confidence
+  top.sort((a, b) => b.confidence - a.confidence);
 
   // Assign stable IDs
   for (const rule of top) {

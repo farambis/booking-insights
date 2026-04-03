@@ -304,20 +304,23 @@ describe("mineRecurringTextRules", () => {
     expect(rules[0].title).toContain("Rechnung");
   });
 
-  it("does not emit a rule for text appearing in fewer than 3 months", () => {
-    const lines: JournalEntryLine[] = [];
-    const months = ["2025-01-15", "2025-02-15"];
-    for (const date of months) {
-      lines.push(
-        makeLine({
-          document_id: `D-${date}`,
-          line_id: 1,
-          posting_date: date,
-          booking_text: "Miete",
-          gl_account: "070000",
-        }),
-      );
-    }
+  it("does not emit a rule for text appearing in fewer than 2 months", () => {
+    const lines: JournalEntryLine[] = [
+      makeLine({
+        document_id: "D-1",
+        line_id: 1,
+        posting_date: "2025-01-15",
+        booking_text: "Miete",
+        gl_account: "070000",
+      }),
+      makeLine({
+        document_id: "D-2",
+        line_id: 1,
+        posting_date: "2025-01-20",
+        booking_text: "Miete",
+        gl_account: "070000",
+      }),
+    ];
 
     const rules = mineRecurringTextRules(lines);
     expect(rules.length).toBe(0);
