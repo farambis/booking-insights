@@ -7,7 +7,7 @@ const criticalFlag = {
   label: "Duplicate Entry",
   explanation:
     "This booking appears to be a duplicate of 5000000141 (same account, similar amount within 5%, posted within 2 days).",
-  confidence: "high" as const,
+  confidencePercent: 87,
   relatedDocumentId: "5000000141",
 };
 
@@ -15,7 +15,7 @@ const warningFlag = {
   type: "unusual_amount" as const,
   label: "Unusual Amount",
   explanation: "Amount exceeds 2x the account average.",
-  confidence: "medium" as const,
+  confidencePercent: 55,
   relatedDocumentId: null,
 };
 
@@ -32,9 +32,33 @@ describe("FlagExplanationCard", () => {
     ).toBeInTheDocument();
   });
 
-  it("renders the confidence level", () => {
+  it("renders confidence as percentage", () => {
     render(<FlagExplanationCard flag={criticalFlag} severity="critical" />);
-    expect(screen.getByText("High")).toBeInTheDocument();
+    expect(screen.getByText("87%")).toBeInTheDocument();
+  });
+
+  it("renders lower confidence as percentage", () => {
+    render(<FlagExplanationCard flag={warningFlag} severity="warning" />);
+    expect(screen.getByText("55%")).toBeInTheDocument();
+  });
+
+  it("applies red color for confidence >= 75%", () => {
+    render(<FlagExplanationCard flag={criticalFlag} severity="critical" />);
+    const pct = screen.getByText("87%");
+    expect(pct.className).toContain("text-critical");
+  });
+
+  it("applies amber color for confidence 50-74%", () => {
+    render(<FlagExplanationCard flag={warningFlag} severity="warning" />);
+    const pct = screen.getByText("55%");
+    expect(pct.className).toContain("text-warning");
+  });
+
+  it("applies neutral color for confidence < 50%", () => {
+    const lowFlag = { ...warningFlag, confidencePercent: 38 };
+    render(<FlagExplanationCard flag={lowFlag} severity="warning" />);
+    const pct = screen.getByText("38%");
+    expect(pct.className).toContain("text-neutral-500");
   });
 
   it("renders related document link when present", () => {

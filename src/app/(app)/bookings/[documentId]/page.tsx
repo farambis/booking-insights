@@ -1,11 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { bookingService } from "@/lib/bookings";
-import {
-  formatDateCompact,
-  flagTypeLabel,
-  confidenceLabel,
-} from "@/lib/bookings/format";
+import { formatDateCompact, flagTypeLabel } from "@/lib/bookings/format";
 import { StatusBadge } from "@/components/status-badge";
 import { BookingDataTable } from "@/components/booking-data-table";
 import { FlagExplanationCard } from "@/components/flag-explanation-card";
@@ -74,11 +70,7 @@ export default async function BookingDetailPage(props: {
                       type: flag.type,
                       label: flagTypeLabel(flag.type),
                       explanation: flag.explanation,
-                      confidence: confidenceLabel(
-                        flag.confidence,
-                      ).toLowerCase() as Lowercase<
-                        ReturnType<typeof confidenceLabel>
-                      >,
+                      confidencePercent: Math.round(flag.confidence * 100),
                       relatedDocumentId: flag.relatedDocumentId,
                     }}
                     severity={flag.severity}
