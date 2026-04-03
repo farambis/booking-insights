@@ -23,6 +23,39 @@ export default async function BookingDetailPage(props: {
     notFound();
   }
 
+  // Build a lookup of related documents for inline display in flag cards
+  const relatedDocIds = new Set(
+    booking.flags
+      .map((f) => f.relatedDocumentId)
+      .filter((id): id is string => id !== null),
+  );
+  const relatedDocMap = new Map<
+    string,
+    {
+      documentId: string;
+      description: string;
+      postingDate: string;
+      amount: number;
+      currency: string;
+      glAccount: string;
+      glAccountName: string | null;
+    }
+  >();
+  for (const docId of relatedDocIds) {
+    const doc = await bookingService.getBookingDetail(docId);
+    if (doc) {
+      relatedDocMap.set(docId, {
+        documentId: doc.documentId,
+        description: doc.description,
+        postingDate: doc.postingDate,
+        amount: doc.amount,
+        currency: doc.currency,
+        glAccount: doc.glAccount,
+        glAccountName: doc.glAccountName,
+      });
+    }
+  }
+
   return (
     <div>
       {/* Back navigation */}
@@ -74,6 +107,11 @@ export default async function BookingDetailPage(props: {
                       relatedDocumentId: flag.relatedDocumentId,
                     }}
                     severity={flag.severity}
+                    relatedDocument={
+                      flag.relatedDocumentId
+                        ? (relatedDocMap.get(flag.relatedDocumentId) ?? null)
+                        : null
+                    }
                   />
                 ))}
               </div>
