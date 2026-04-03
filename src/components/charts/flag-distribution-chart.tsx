@@ -16,15 +16,14 @@ interface FlagDistributionChartProps {
 
 export function FlagDistributionChart({ data }: FlagDistributionChartProps) {
   return (
-    <div className="rounded-lg border border-neutral-200 bg-white p-5 shadow-sm">
+    <div
+      className="select-none rounded-lg border border-neutral-200 bg-white p-5 shadow-sm"
+      onMouseDown={(e) => e.preventDefault()}
+    >
       <h2 className="mb-4 text-sm font-semibold text-neutral-900">
         Flag Distribution by Type
       </h2>
-      {/* Prevent focus on click — tooltip still works via mouse events */}
-      <div
-        className="h-[220px]"
-        onMouseDown={(e) => e.preventDefault()}
-      >
+      <div className="h-[220px]">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
             data={data}
