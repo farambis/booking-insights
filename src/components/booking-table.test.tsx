@@ -19,6 +19,7 @@ function makeBooking(
     status: "clean",
     flags: [],
     documentType: "KR",
+
     ...overrides,
   };
 }
@@ -101,7 +102,7 @@ describe("BookingTable", () => {
   });
 
   it("applies critical row tinting", () => {
-    const booking = makeBooking({ status: "critical" });
+    const booking = makeBooking({ status: "critical", flags: [{ type: "text_duplicate_posting", severity: "critical", explanation: "test", confidence: 0.8, detectedAt: "2025-01-01", relatedDocumentId: null }] });
     render(
       <BookingTable
         bookings={[booking]}
@@ -116,7 +117,7 @@ describe("BookingTable", () => {
   });
 
   it("applies warning row tinting", () => {
-    const booking = makeBooking({ status: "warning" });
+    const booking = makeBooking({ status: "warning", flags: [{ type: "text_typo", severity: "warning", explanation: "test", confidence: 0.7, detectedAt: "2025-01-01", relatedDocumentId: null }] });
     render(
       <BookingTable
         bookings={[booking]}
@@ -131,7 +132,7 @@ describe("BookingTable", () => {
   });
 
   it("renders status indicator dot for critical bookings", () => {
-    const booking = makeBooking({ status: "critical" });
+    const booking = makeBooking({ status: "critical", flags: [{ type: "text_duplicate_posting", severity: "critical", explanation: "test", confidence: 0.8, detectedAt: "2025-01-01", relatedDocumentId: null }] });
     const { container } = render(
       <BookingTable
         bookings={[booking]}
@@ -145,7 +146,7 @@ describe("BookingTable", () => {
   });
 
   it("renders status badge for critical bookings", () => {
-    const booking = makeBooking({ status: "critical" });
+    const booking = makeBooking({ status: "critical", flags: [{ type: "text_duplicate_posting", severity: "critical", explanation: "test", confidence: 0.8, detectedAt: "2025-01-01", relatedDocumentId: null }] });
     render(
       <BookingTable
         bookings={[booking]}

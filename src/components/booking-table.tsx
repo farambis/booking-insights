@@ -6,7 +6,11 @@ import type {
   BookingStatus,
   SortableColumn,
 } from "@/lib/bookings";
-import { formatAmount, formatDateCompact } from "@/lib/bookings/format";
+import {
+  formatAmount,
+  formatDateCompact,
+  flagTypeShortLabel,
+} from "@/lib/bookings/format";
 import { StatusBadge } from "@/components/status-badge";
 
 interface BookingTableProps {
@@ -48,7 +52,7 @@ const COLUMNS: ColumnDef[] = [
   },
   { key: "account", label: "Account", align: "left", width: "w-[100px]" },
   { key: "amount", label: "Amount", align: "right", width: "w-[150px]" },
-  { key: "status", label: "Status", align: "center", width: "w-[80px]" },
+  { key: "status", label: "Status", align: "left", width: "w-[140px]" },
 ];
 
 const ALIGN_CLASSES: Record<string, string> = {
@@ -137,9 +141,15 @@ export function BookingTable({
               >
                 {formatAmount(booking.amount, booking.currency)}
               </td>
-              <td className="px-3 py-2.5 text-center">
+              <td className="px-3 py-2.5 text-left">
                 {booking.status !== "clean" && (
-                  <StatusBadge status={booking.status} />
+                  <span className="flex items-center gap-1.5">
+                    <StatusBadge status={booking.status} />
+                    <span className="text-xs text-neutral-500">
+                      {flagTypeShortLabel(booking.flags[0].type)}
+                      {booking.flags.length > 1 && ` +${booking.flags.length - 1}`}
+                    </span>
+                  </span>
                 )}
               </td>
             </tr>
