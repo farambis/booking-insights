@@ -427,6 +427,9 @@ export function generateJournalEntries(): GenerationResult {
     ["Buchung laut Beleg", "Buchung laut Bleg"],
     ["Löhne Januar", "Löhne Janua"],
     ["Löhne Februar", "Löhne Ferbruar"],
+    ["Umbuchung", "Umbuuchng"],
+    ["Reisekosten Vertrieb", "Reisekosten Vetrieb"],
+    ["Reisekosten Messe", "Reisekosten Mese"],
   ];
 
   const usedDocIds = new Set<string>();
@@ -451,7 +454,7 @@ export function generateJournalEntries(): GenerationResult {
     (l) => l.line_id === 1 && l.debit_credit === "S",
   );
   let doubleCount = 0;
-  for (let i = 0; i < doubleCandidates.length - 1 && doubleCount < 1; i++) {
+  for (let i = 0; i < doubleCandidates.length - 1 && doubleCount < 3; i++) {
     const orig = doubleCandidates[i];
     // Create a near-duplicate document
     const newDocId = String(docNumber++);
@@ -640,7 +643,7 @@ export function generateJournalEntries(): GenerationResult {
 
   // 5. Unusual amounts: inject 3 lines with amounts 5-10x the normal range
   // Target accounts with ≥10 lines so the detector has enough data
-  const unusualAmountAccounts = ["090000", "030000"];
+  const unusualAmountAccounts = ["090000", "030000", "090100"];
   for (const targetAccount of unusualAmountAccounts) {
     const idx = allLines.findIndex(
       (l) =>
@@ -678,7 +681,7 @@ export function generateJournalEntries(): GenerationResult {
   }
 
   // 6. Round number anomalies: inject 3 lines with suspiciously round amounts
-  const roundAmounts = [10000, 15000];
+  const roundAmounts = [10000, 15000, 20000];
   let roundIdx = 0;
   for (const roundAmount of roundAmounts) {
     const idx = allLines.findIndex(
