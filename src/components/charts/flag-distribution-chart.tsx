@@ -20,7 +20,11 @@ export function FlagDistributionChart({ data }: FlagDistributionChartProps) {
       <h2 className="mb-4 text-sm font-semibold text-neutral-900">
         Flag Distribution by Type
       </h2>
-      <div className="h-[220px]">
+      {/* Prevent focus on click — tooltip still works via mouse events */}
+      <div
+        className="h-[220px]"
+        onMouseDown={(e) => e.preventDefault()}
+      >
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
             data={data}
