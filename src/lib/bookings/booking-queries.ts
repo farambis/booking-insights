@@ -264,7 +264,9 @@ export function findRelated(
 
   // Possible duplicate: check if any flag references another document
   const dupFlag = current.flags.find(
-    (f) => f.type === "duplicate_entry" && f.relatedDocumentId,
+    (f) =>
+      (f.type === "duplicate_entry" || f.type === "duplicate_booking") &&
+      f.relatedDocumentId,
   );
   const possibleDuplicate = dupFlag?.relatedDocumentId
     ? (bookings.find((b) => b.documentId === dupFlag.relatedDocumentId) ?? null)
