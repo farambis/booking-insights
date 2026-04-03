@@ -22,6 +22,7 @@ import {
   detectMissingCounterparts,
 } from "./pattern-detectors";
 import { mineBookingRules } from "./rule-miner";
+import { findRuleViolations } from "./rule-violations";
 import type { BookingManual } from "./rule.types";
 
 function lookupAccountName(glAccount: string): string | null {
@@ -186,5 +187,13 @@ export const localBookingService: BookingService = {
   },
   async getBookingManual() {
     return bookingManual;
+  },
+  async getRuleViolations(ruleId) {
+    const rule = bookingManual.rules.find((r) => r.id === ruleId);
+    if (!rule) return null;
+
+    const rawLines = journalEntries as JournalEntryLine[];
+    const violations = findRuleViolations(rule, rawLines, allBookings);
+    return { rule, violations };
   },
 };
