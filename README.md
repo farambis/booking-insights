@@ -54,9 +54,13 @@ Replaces basic text-signature duplicate detection with weighted scoring across 9
 
 **Key decision:** Amount match (≤0.50 EUR difference) is a required gate. Same vendor + same account without matching amount is normal business activity, not a duplicate. Confidence is shown as a percentage (not High/Medium/Low), and related documents are inlined in the flag card.
 
-### Booking Manual / Rule Suggestions
+### PR [#2](https://github.com/farambis/booking-insights/pull/2) — Booking Manual / Rule Mining
 
-Automatically derived booking rules from transaction data (account+tax code, account+cost center, document type+account range, recurring texts, amount ranges). Rule violations are detected as a separate flag type. Details in [docs/exercise-3.md](docs/exercise-3.md).
+Derives booking rules from transaction data to serve as a data-driven "booking manual." Five miners extract patterns: account+tax code rules, account+cost center rules, document type+account range rules, recurring text patterns, and amount range rules. Each rule has a confidence score adjusted for sample size. The top 10 rules are displayed on a dedicated `/manual` page.
+
+Rules are separate from flags — they describe "how things should be" (prescriptive), while flags describe "what looks wrong" (diagnostic). However, `rule_violation` flags are emitted when bookings deviate from the derived rules.
+
+**Key finding:** Initial confidence ranking was effectively `confidence²` because `confidence` and `supportRatio` were identical. Fixed by introducing `adjustedConfidence()` that penalizes small samples using `concentration * sqrt(sampleSize / 30)`.
 
 ## Exercise 3: Context Engineering
 
