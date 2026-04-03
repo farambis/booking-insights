@@ -57,3 +57,7 @@ Die Kontenbereiche und das Kontenverzeichnis sind in `src/lib/data/account-maste
 ## Exercise 2: Text-Based Anomaly Detection
 
 Erkennung auffälliger Buchungstexte mittels Levenshtein-Distanz und Häufigkeitsanalyse. Details siehe [docs/exercise-2.md](docs/exercise-2.md).
+
+## Exercise 3: Booking Manual / Rule Suggestions
+
+Automatisch generierte Buchungsregeln aus den bestehenden Transaktionsdaten. Details siehe [docs/exercise-3.md](docs/exercise-3.md).
