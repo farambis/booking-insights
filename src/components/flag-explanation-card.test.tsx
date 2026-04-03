@@ -61,14 +61,61 @@ describe("FlagExplanationCard", () => {
     expect(pct.className).toContain("text-neutral-500");
   });
 
-  it("renders related document link when present", () => {
+  it("renders plain link fallback when no relatedDocument provided", () => {
     render(<FlagExplanationCard flag={criticalFlag} severity="critical" />);
     const link = screen.getByRole("link", { name: /5000000141/ });
     expect(link).toBeInTheDocument();
     expect(link).toHaveAttribute("href", "/bookings/5000000141");
   });
 
-  it("does not render related document link when null", () => {
+  it("renders inline document card when relatedDocument is provided", () => {
+    const relatedDoc = {
+      documentId: "5000000141",
+      description: "Lieferant Mueller GmbH",
+      postingDate: "2025-01-15",
+      amount: 1404.17,
+      currency: "EUR",
+      glAccount: "060000",
+      glAccountName: "Gehaelter",
+    };
+    render(
+      <FlagExplanationCard
+        flag={criticalFlag}
+        severity="critical"
+        relatedDocument={relatedDoc}
+      />,
+    );
+    expect(screen.getByText("5000000141")).toBeInTheDocument();
+    expect(screen.getByText("Lieferant Mueller GmbH")).toBeInTheDocument();
+    expect(screen.getByText("15.01.2025")).toBeInTheDocument();
+    expect(screen.getByText(/060000/)).toBeInTheDocument();
+    // The inline card should be a link to the related document
+    const link = screen.getByRole("link", { name: /5000000141/ });
+    expect(link).toHaveAttribute("href", "/bookings/5000000141");
+  });
+
+  it("hides plain link when inline document card is shown", () => {
+    const relatedDoc = {
+      documentId: "5000000141",
+      description: "Lieferant Mueller GmbH",
+      postingDate: "2025-01-15",
+      amount: 1404.17,
+      currency: "EUR",
+      glAccount: "060000",
+      glAccountName: "Gehaelter",
+    };
+    render(
+      <FlagExplanationCard
+        flag={criticalFlag}
+        severity="critical"
+        relatedDocument={relatedDoc}
+      />,
+    );
+    // Should NOT show the plain "Related: 5000000141" text
+    expect(screen.queryByText("Related:")).toBeNull();
+  });
+
+  it("does not render any link when relatedDocumentId is null", () => {
     render(<FlagExplanationCard flag={warningFlag} severity="warning" />);
     expect(screen.queryByRole("link")).toBeNull();
   });
