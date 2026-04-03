@@ -249,7 +249,7 @@ export function mineDocumentTypeAccountRules(
         ),
         `Account range: ${dominantRange}`,
       ),
-      violationCount: docTypeLines.length - dominantCount,
+      violationCount: classifiedCount - dominantCount,
       scope: { documentType: docType, accountRange: dominantRange },
     });
   }
