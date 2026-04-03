@@ -46,7 +46,6 @@ export function FilterBar({
     <div className="mb-4 rounded-lg border border-neutral-200 bg-white p-4">
       <div className="flex flex-wrap items-center gap-3">
         <SearchInput
-          key={currentFilters.search ?? ""}
           defaultValue={currentFilters.search ?? ""}
           onChange={(search) => updateFilters({ search })}
         />
