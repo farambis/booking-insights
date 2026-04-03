@@ -15,6 +15,12 @@ import {
 } from "./booking-queries";
 import { detectTextAnomalies } from "./text-anomaly-detector";
 import { detectDuplicateBookings } from "./duplicate-detector";
+import {
+  detectUnusualAmounts,
+  detectRoundNumberAnomalies,
+  detectPatternBreaks,
+  detectMissingCounterparts,
+} from "./pattern-detectors";
 import { mineBookingRules } from "./rule-miner";
 import type { BookingManual } from "./rule.types";
 
@@ -50,14 +56,25 @@ function groupByDocument(
 function transformAndFlag(rawLines: JournalEntryLine[]): BookingDetail[] {
   const textFlagMap = detectTextAnomalies(rawLines);
   const dupFlagMap = detectDuplicateBookings(rawLines);
+  const unusualAmountMap = detectUnusualAmounts(rawLines);
+  const roundNumberMap = detectRoundNumberAnomalies(rawLines);
+  const patternBreakMap = detectPatternBreaks(rawLines);
+  const missingCounterpartMap = detectMissingCounterparts(rawLines);
 
   // Merge all flag maps
   const flagMap = new Map<string, BookingFlag[]>();
-  for (const [key, flags] of textFlagMap) {
-    flagMap.set(key, [...(flagMap.get(key) ?? []), ...flags]);
-  }
-  for (const [key, flags] of dupFlagMap) {
-    flagMap.set(key, [...(flagMap.get(key) ?? []), ...flags]);
+  const allMaps = [
+    textFlagMap,
+    dupFlagMap,
+    unusualAmountMap,
+    roundNumberMap,
+    patternBreakMap,
+    missingCounterpartMap,
+  ];
+  for (const map of allMaps) {
+    for (const [key, flags] of map) {
+      flagMap.set(key, [...(flagMap.get(key) ?? []), ...flags]);
+    }
   }
   const documents = groupByDocument(rawLines);
   const bookings: BookingDetail[] = [];
@@ -107,7 +124,9 @@ function transformAndFlag(rawLines: JournalEntryLine[]): BookingDetail[] {
     bookings.push({
       documentId,
       postingDate: primary.posting_date,
-      description: [...new Set(docLines.map((l) => l.booking_text))].join(" · "),
+      description: [...new Set(docLines.map((l) => l.booking_text))].join(
+        " · ",
+      ),
       glAccount: primary.gl_account,
       glAccountName: lookupAccountName(primary.gl_account),
       contraAccount: contraLine?.gl_account ?? null,
