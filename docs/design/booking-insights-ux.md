@@ -87,16 +87,17 @@ Every page has a title block at the top of the content area: large heading, smal
 ### Design Decision: URL-Driven Filters
 
 Active filters are stored in the URL as query params (e.g., `/bookings?status=critical&account=060000`). This means:
+
 - Sharing a URL shares the exact filtered view — useful for async collaboration
 - The browser back button restores filter state
 - The sidebar "Bookings" link always goes to the unfiltered list
 
 ### View Map
 
-| Route | Purpose |
-|---|---|
-| `/` | Dashboard — health summary, KPI cards, charts |
-| `/bookings` | Booking List — searchable, filterable table |
+| Route                     | Purpose                                        |
+| ------------------------- | ---------------------------------------------- |
+| `/`                       | Dashboard — health summary, KPI cards, charts  |
+| `/bookings`               | Booking List — searchable, filterable table    |
 | `/bookings/[document_id]` | Booking Detail — full context for one document |
 
 ---
@@ -240,13 +241,13 @@ Missing account:         "(No account)" in italic text-neutral-400
 
 ## 6. Key UX Decisions Summary
 
-| Decision | Rationale |
-|---|---|
-| Light mode only | Brand is light-first; financial tools are a professional desktop context |
-| Row tinting by severity | Lets users scan severity without reading every badge; complements, not replaces, badge column |
-| URL-driven filter state | Enables async collaboration and reliable browser back behavior |
-| Document lines over activity log | Double-entry context is more actionable for accountants than an event timeline |
-| Actions as post-MVP | Persisting user decisions requires a database; read-only analysis is the MVP scope |
-| Desktop-first, mobile out of scope | Target users (accountants) work on desktops; mobile blocked with a polite redirect message |
-| Confidence as text label | Accountants need judgment language ("High confidence"), not probability decimals |
-| Monospace for numbers/IDs | Document IDs and account numbers are scanned for patterns — alignment aids recognition |
+| Decision                           | Rationale                                                                                     |
+| ---------------------------------- | --------------------------------------------------------------------------------------------- |
+| Light mode only                    | Brand is light-first; financial tools are a professional desktop context                      |
+| Row tinting by severity            | Lets users scan severity without reading every badge; complements, not replaces, badge column |
+| URL-driven filter state            | Enables async collaboration and reliable browser back behavior                                |
+| Document lines over activity log   | Double-entry context is more actionable for accountants than an event timeline                |
+| Actions as post-MVP                | Persisting user decisions requires a database; read-only analysis is the MVP scope            |
+| Desktop-first, mobile out of scope | Target users (accountants) work on desktops; mobile blocked with a polite redirect message    |
+| Confidence as text label           | Accountants need judgment language ("High confidence"), not probability decimals              |
+| Monospace for numbers/IDs          | Document IDs and account numbers are scanned for patterns — alignment aids recognition        |

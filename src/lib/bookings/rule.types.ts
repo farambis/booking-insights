@@ -5,6 +5,44 @@ export type RuleCategory =
   | "recurring_text"
   | "amount_range";
 
+export type RuleScope =
+  | AccountTaxCodeScope
+  | AccountCostCenterScope
+  | DocumentTypeAccountScope
+  | RecurringTextScope
+  | AmountRangeScope;
+
+export interface AccountTaxCodeScope {
+  category: "account_tax_code";
+  glAccount: string;
+  taxCode: string;
+}
+
+export interface AccountCostCenterScope {
+  category: "account_cost_center";
+  glAccount: string;
+  costCenter: string;
+}
+
+export interface DocumentTypeAccountScope {
+  category: "document_type_account";
+  documentType: string;
+  accountRange: string;
+}
+
+export interface RecurringTextScope {
+  category: "recurring_text";
+  textPattern: string;
+  glAccount: string;
+}
+
+export interface AmountRangeScope {
+  category: "amount_range";
+  glAccount: string;
+  amountMin: number;
+  amountMax: number;
+}
+
 export interface BookingRule {
   id: string;
   title: string;
@@ -27,17 +65,6 @@ export interface RuleEvidence {
   glAccountName: string | null;
   amount: number;
   note: string;
-}
-
-export interface RuleScope {
-  glAccount?: string;
-  taxCode?: string;
-  costCenter?: string;
-  documentType?: string;
-  accountRange?: string;
-  textPattern?: string;
-  amountMin?: number;
-  amountMax?: number;
 }
 
 export interface BookingManual {

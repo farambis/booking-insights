@@ -42,6 +42,7 @@ journal-entries.json
 ```
 
 **Flag types:**
+
 - `duplicate_booking` — Multi-signal duplicate (amount + vendor + account + text + date)
 - `text_typo` — Typo in booking text (Levenshtein distance)
 - `unusual_text_account` — Unusual text-account combination
@@ -61,6 +62,7 @@ Three detectors for booking text anomalies: typos via Levenshtein distance, unus
 **Key finding:** 99.8% false positive rate in the typo detector caused by date-suffixed booking texts ("Ausgangsrechnung 2025-01-15" vs "2025-01-16").
 
 Follow-up fixes:
+
 - [`9fb8b9a`](https://github.com/farambis/booking-insights/commit/9fb8b9a) — Add new text flag types to `VALID_FLAG_TYPES` whitelist (filter dropdown was silently ignoring them)
 - [`cd5fc78`](https://github.com/farambis/booking-insights/commit/cd5fc78) — Normalize booking texts before comparison, stripping date suffixes. Eliminated all 1,221 false positives while preserving 2 genuine typo detections
 
@@ -71,6 +73,7 @@ Replaces basic text-signature duplicate detection with weighted scoring across 9
 **Key decision:** Amount match (≤0.50 EUR difference) is a required gate. Same vendor + same account without matching amount is normal business activity, not a duplicate.
 
 Follow-up fixes:
+
 - [`b36a710`](https://github.com/farambis/booking-insights/commit/b36a710) — Show confidence as percentage instead of High/Medium/Low tiers (review found that 0.76 and 0.99 looked identical)
 - [`e1c64b3`](https://github.com/farambis/booking-insights/commit/e1c64b3) — Inline related document info in flag card (review found accountants had to click through to see the other document)
 
@@ -81,6 +84,7 @@ Derives booking rules from transaction data to serve as a data-driven "booking m
 **Key finding:** Initial confidence ranking was effectively `confidence²` because `confidence` and `supportRatio` were identical.
 
 Follow-up fixes:
+
 - [`f4b319a`](https://github.com/farambis/booking-insights/commit/f4b319a) — Add font-mono to evidence document IDs for scannability
 - [`97d3b51`](https://github.com/farambis/booking-insights/commit/97d3b51) — Separate confidence from supportRatio; introduce `adjustedConfidence()` that penalizes small samples
 - [`100a09a`](https://github.com/farambis/booking-insights/commit/100a09a) — Fix violation link to use available filters per rule scope instead of hardcoded `flagTypes=pattern_break`

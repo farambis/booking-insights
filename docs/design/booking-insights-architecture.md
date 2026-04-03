@@ -42,7 +42,9 @@ Each route has a colocated `loading.tsx` skeleton. The `(app)` route group keeps
 // src/lib/bookings/booking-service.ts
 export interface BookingService {
   getDashboardSummary(): Promise<DashboardSummary>;
-  getBookings(filters: BookingFilters): Promise<PaginatedResult<BookingListItem>>;
+  getBookings(
+    filters: BookingFilters,
+  ): Promise<PaginatedResult<BookingListItem>>;
   getBookingDetail(documentId: string): Promise<BookingDetail | null>;
   getRelatedContext(documentId: string): Promise<BookingRelatedContext>;
 }

@@ -4,13 +4,13 @@
 
 ## Context Sources (prioritized by integration risk)
 
-| Tier | Source | What it provides | When to add |
-|------|--------|-----------------|-------------|
-| 1 | Data Dictionary | GL account definitions, tax codes, document types, cost centers | Now (partially exists in `account-master.ts`) |
-| 1 | Policies & SOPs | Thresholds, approval rules, discount policies (Markdown in repo) | Now |
-| 2 | Approval Workflows | Who approved what, when, under which delegation | When UI is validated |
-| 2 | CRM Notes | Vendor/customer context (discounts, bank changes) | When UI is validated |
-| 3 | Email | Invoice disputes, correction requests | Only if explicit demand |
+| Tier | Source             | What it provides                                                 | When to add                                   |
+| ---- | ------------------ | ---------------------------------------------------------------- | --------------------------------------------- |
+| 1    | Data Dictionary    | GL account definitions, tax codes, document types, cost centers  | Now (partially exists in `account-master.ts`) |
+| 1    | Policies & SOPs    | Thresholds, approval rules, discount policies (Markdown in repo) | Now                                           |
+| 2    | Approval Workflows | Who approved what, when, under which delegation                  | When UI is validated                          |
+| 2    | CRM Notes          | Vendor/customer context (discounts, bank changes)                | When UI is validated                          |
+| 3    | Email              | Invoice disputes, correction requests                            | Only if explicit demand                       |
 
 ## Retrieval: Two Tiers
 

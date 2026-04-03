@@ -32,13 +32,13 @@ Default to Server Components. `"use client"` only for: FilterBar (user input + d
 
 ## MVP-Only vs. Permanent
 
-| Decision | MVP-only | Permanent |
-|---|---|---|
-| In-memory mock data behind BookingService interface | x | |
-| BookingService interface contract | | x |
-| URL search params for filter state | | x |
-| Server Component pages as data boundary | | x |
-| Module-level cache of transformed data | x | |
-| Static JSON as data source | x | |
-| Recharts for charts | | x (unless scale demands change) |
-| No auth, no persistence for user actions | x | |
+| Decision                                            | MVP-only | Permanent                       |
+| --------------------------------------------------- | -------- | ------------------------------- |
+| In-memory mock data behind BookingService interface | x        |                                 |
+| BookingService interface contract                   |          | x                               |
+| URL search params for filter state                  |          | x                               |
+| Server Component pages as data boundary             |          | x                               |
+| Module-level cache of transformed data              | x        |                                 |
+| Static JSON as data source                          | x        |                                 |
+| Recharts for charts                                 |          | x (unless scale demands change) |
+| No auth, no persistence for user actions            | x        |                                 |

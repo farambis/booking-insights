@@ -135,4 +135,3 @@ Replaced the basic text-signature-only duplicate detection with a multi-signal w
 1. **Confidence shown as percentage** — Review found that "High/Medium/Low" tier labels discard useful information (a score of 0.76 and 0.99 looked identical). Changed `FlagExplanationCard` to show confidence as percentage (e.g., "87%") with color coding: red ≥75%, amber ≥50%, neutral <50%. This lets accountants calibrate their own response to the confidence level. Removed the `confidenceLabel` indirection from the detail page.
 
 2. **Related document inlined in flag card** — Review found that accountants had to click through to see the related document's details. Added an inline preview card inside `FlagExplanationCard` showing the related document's ID, description, posting date, amount, and account. The card is clickable for full navigation. Falls back to a plain link when document info is not available.
-

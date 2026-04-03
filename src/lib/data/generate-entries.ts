@@ -82,12 +82,27 @@ const CUSTOMER_TEXTS_BASE = [
 ];
 
 const GERMAN_MONTHS = [
-  "Januar", "Februar", "März", "April", "Mai", "Juni",
-  "Juli", "August", "September", "Oktober", "November", "Dezember",
+  "Januar",
+  "Februar",
+  "März",
+  "April",
+  "Mai",
+  "Juni",
+  "Juli",
+  "August",
+  "September",
+  "Oktober",
+  "November",
+  "Dezember",
 ];
 
 /** Compute the two months preceding the current date */
-function getDateRange(): { year1: number; month1: number; year2: number; month2: number } {
+function getDateRange(): {
+  year1: number;
+  month1: number;
+  year2: number;
+  month2: number;
+} {
   const now = new Date();
   // Last month (month2) and the month before that (month1)
   const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
@@ -103,7 +118,10 @@ function getDateRange(): { year1: number; month1: number; year2: number; month2:
 const DATE_RANGE = getDateRange();
 
 const EXPENSE_TEXTS: Record<string, string[]> = {
-  "070000": [`Miete Büro ${GERMAN_MONTHS[DATE_RANGE.month1 - 1]}`, `Miete Büro ${GERMAN_MONTHS[DATE_RANGE.month2 - 1]}`],
+  "070000": [
+    `Miete Büro ${GERMAN_MONTHS[DATE_RANGE.month1 - 1]}`,
+    `Miete Büro ${GERMAN_MONTHS[DATE_RANGE.month2 - 1]}`,
+  ],
   "070100": ["Stromkosten", "Gaskosten", "Heizkosten"],
   "070200": ["Telefonkosten", "Internetkosten"],
   "070300": ["Büromaterial", "Druckerpatronen", "Kopierpapier"],
@@ -439,7 +457,13 @@ export function generateJournalEntries(): GenerationResult {
       amount: totalAmount,
       currency: "EUR",
       debit_credit: "H",
-      booking_text: getBookingText(rng, creditAccount, scenario.docType, year, month),
+      booking_text: getBookingText(
+        rng,
+        creditAccount,
+        scenario.docType,
+        year,
+        month,
+      ),
       vendor_id: vendorId,
       customer_id: customerId,
       tax_code: getTaxCode(scenario.docType, creditAccount),
@@ -458,8 +482,14 @@ export function generateJournalEntries(): GenerationResult {
     ["Korrektur", "Korrektru"],
     ["Periodische Abgrenzung", "Periodiche Abgrenzung"],
     ["Buchung laut Beleg", "Buchung laut Bleg"],
-    [`Löhne ${GERMAN_MONTHS[DATE_RANGE.month1 - 1]}`, `Löhne ${GERMAN_MONTHS[DATE_RANGE.month1 - 1].slice(0, -1)}`],
-    [`Löhne ${GERMAN_MONTHS[DATE_RANGE.month2 - 1]}`, `Löhne ${GERMAN_MONTHS[DATE_RANGE.month2 - 1].slice(0, -2)}uar`],
+    [
+      `Löhne ${GERMAN_MONTHS[DATE_RANGE.month1 - 1]}`,
+      `Löhne ${GERMAN_MONTHS[DATE_RANGE.month1 - 1].slice(0, -1)}`,
+    ],
+    [
+      `Löhne ${GERMAN_MONTHS[DATE_RANGE.month2 - 1]}`,
+      `Löhne ${GERMAN_MONTHS[DATE_RANGE.month2 - 1].slice(0, -2)}uar`,
+    ],
     ["Umbuchung", "Umbuuchng"],
     ["Reisekosten Vertrieb", "Reisekosten Vetrieb"],
     ["Reisekosten Messe", "Reisekosten Mese"],
@@ -507,8 +537,15 @@ export function generateJournalEntries(): GenerationResult {
       }
     }
     // Clamp to last day of the range
-    const endMaxDays = new Date(DATE_RANGE.year2, DATE_RANGE.month2, 0).getDate();
-    if (newYear > DATE_RANGE.year2 || (newYear === DATE_RANGE.year2 && newMonth > DATE_RANGE.month2)) {
+    const endMaxDays = new Date(
+      DATE_RANGE.year2,
+      DATE_RANGE.month2,
+      0,
+    ).getDate();
+    if (
+      newYear > DATE_RANGE.year2 ||
+      (newYear === DATE_RANGE.year2 && newMonth > DATE_RANGE.month2)
+    ) {
       newYear = DATE_RANGE.year2;
       newMonth = DATE_RANGE.month2;
       day = endMaxDays;

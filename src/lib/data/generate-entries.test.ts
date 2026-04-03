@@ -22,7 +22,11 @@ describe("generateJournalEntries", () => {
     const twoMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 2, 1);
     const startDate = `${twoMonthsAgo.getFullYear()}-${String(twoMonthsAgo.getMonth() + 1).padStart(2, "0")}-01`;
     const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    const endDay = new Date(lastMonth.getFullYear(), lastMonth.getMonth() + 1, 0).getDate();
+    const endDay = new Date(
+      lastMonth.getFullYear(),
+      lastMonth.getMonth() + 1,
+      0,
+    ).getDate();
     const endDate = `${lastMonth.getFullYear()}-${String(lastMonth.getMonth() + 1).padStart(2, "0")}-${String(endDay).padStart(2, "0")}`;
 
     for (const line of lines) {

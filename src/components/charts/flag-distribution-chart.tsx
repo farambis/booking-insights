@@ -17,7 +17,7 @@ interface FlagDistributionChartProps {
 export function FlagDistributionChart({ data }: FlagDistributionChartProps) {
   return (
     <div
-      className="select-none rounded-lg border border-neutral-200 bg-white p-5 shadow-sm"
+      className="rounded-lg border border-neutral-200 bg-white p-5 shadow-sm select-none"
       onMouseDown={(e) => e.preventDefault()}
     >
       <h2 className="mb-4 text-sm font-semibold text-neutral-900">
