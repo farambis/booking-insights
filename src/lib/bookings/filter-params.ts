@@ -9,6 +9,7 @@ import { DEFAULT_PAGE_SIZE, PAGE_SIZE_OPTIONS } from "./booking-queries";
 const VALID_STATUSES: BookingStatus[] = ["critical", "warning", "clean"];
 const VALID_FLAG_TYPES: FlagType[] = [
   "duplicate_entry",
+  "duplicate_booking",
   "missing_counterpart",
   "unusual_amount",
   "pattern_break",
@@ -77,7 +78,10 @@ export function parseBookingFilters(
 
   const rawPageSize = getNumber(raw, "pageSize");
   const pageSize =
-    rawPageSize && PAGE_SIZE_OPTIONS.includes(rawPageSize as (typeof PAGE_SIZE_OPTIONS)[number])
+    rawPageSize &&
+    PAGE_SIZE_OPTIONS.includes(
+      rawPageSize as (typeof PAGE_SIZE_OPTIONS)[number],
+    )
       ? rawPageSize
       : DEFAULTS.pageSize;
 

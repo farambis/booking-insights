@@ -4,6 +4,7 @@ export type FlagSeverity = "critical" | "warning";
 /** Flag type identifiers (snake_case for storage, display labels are separate) */
 export type FlagType =
   | "duplicate_entry"
+  | "duplicate_booking"
   | "missing_counterpart"
   | "unusual_amount"
   | "pattern_break"
