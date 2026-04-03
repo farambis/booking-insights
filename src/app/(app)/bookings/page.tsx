@@ -15,7 +15,6 @@ import { ResultsSummary } from "@/components/results-summary";
 import { EmptyState } from "@/components/empty-state";
 
 const ALL_FLAG_TYPES: { id: FlagType; label: string }[] = [
-  { id: "duplicate_entry", label: flagTypeLabel("duplicate_entry") },
   { id: "duplicate_booking", label: flagTypeLabel("duplicate_booking") },
   { id: "missing_counterpart", label: flagTypeLabel("missing_counterpart") },
   { id: "unusual_amount", label: flagTypeLabel("unusual_amount") },
