@@ -28,7 +28,11 @@ export function findRuleViolations(
     case "account_tax_code": {
       const { glAccount, taxCode } = rule.scope;
       for (const line of lines) {
-        if (line.gl_account === glAccount && line.tax_code !== taxCode) {
+        if (
+          line.gl_account === glAccount &&
+          line.tax_code !== null &&
+          line.tax_code !== taxCode
+        ) {
           violatingDocIds.add(line.document_id);
         }
       }
@@ -38,7 +42,11 @@ export function findRuleViolations(
     case "account_cost_center": {
       const { glAccount, costCenter } = rule.scope;
       for (const line of lines) {
-        if (line.gl_account === glAccount && line.cost_center !== costCenter) {
+        if (
+          line.gl_account === glAccount &&
+          line.cost_center !== null &&
+          line.cost_center !== costCenter
+        ) {
           violatingDocIds.add(line.document_id);
         }
       }

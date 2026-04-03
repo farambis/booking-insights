@@ -113,7 +113,7 @@ describe("findRuleViolations", () => {
       expect(result[0].documentId).toBe("D2");
     });
 
-    it("flags lines where tax_code is null as violations", () => {
+    it("does not flag lines where tax_code is null", () => {
       const rule = makeRule({
         category: "account_tax_code",
         scope: {
@@ -144,8 +144,7 @@ describe("findRuleViolations", () => {
       ];
 
       const result = findRuleViolations(rule, lines, bookings);
-      expect(result.length).toBe(1);
-      expect(result[0].documentId).toBe("D2");
+      expect(result.length).toBe(0);
     });
 
     it("returns empty array when all lines conform", () => {
@@ -201,8 +200,38 @@ describe("findRuleViolations", () => {
           gl_account: "060000",
           cost_center: "2000",
         }),
+      ];
+
+      const bookings: BookingListItem[] = [
+        makeBookingListItem({ documentId: "D1", glAccount: "060000" }),
+        makeBookingListItem({ documentId: "D2", glAccount: "060000" }),
+      ];
+
+      const result = findRuleViolations(rule, lines, bookings);
+      expect(result.length).toBe(1);
+      expect(result[0].documentId).toBe("D2");
+    });
+
+    it("does not flag lines where cost_center is null", () => {
+      const rule = makeRule({
+        id: "account_cost_center:060000:1000",
+        category: "account_cost_center",
+        scope: {
+          category: "account_cost_center",
+          glAccount: "060000",
+          costCenter: "1000",
+        },
+      });
+
+      const lines: JournalEntryLine[] = [
         makeLine({
-          document_id: "D3",
+          document_id: "D1",
+          line_id: 1,
+          gl_account: "060000",
+          cost_center: "1000",
+        }),
+        makeLine({
+          document_id: "D2",
           line_id: 1,
           gl_account: "060000",
           cost_center: null,
@@ -212,13 +241,10 @@ describe("findRuleViolations", () => {
       const bookings: BookingListItem[] = [
         makeBookingListItem({ documentId: "D1", glAccount: "060000" }),
         makeBookingListItem({ documentId: "D2", glAccount: "060000" }),
-        makeBookingListItem({ documentId: "D3", glAccount: "060000" }),
       ];
 
       const result = findRuleViolations(rule, lines, bookings);
-      expect(result.length).toBe(2);
-      const ids = result.map((r) => r.documentId).sort();
-      expect(ids).toEqual(["D2", "D3"]);
+      expect(result.length).toBe(0);
     });
   });
 
