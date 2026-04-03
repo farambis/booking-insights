@@ -23,11 +23,13 @@ Three views: **Dashboard** (KPI cards, flag distribution chart, activity timelin
 - [Technical Architecture](docs/design/booking-insights-architecture.md) — route structure, component overview, file tree
 - [UX Design](docs/design/booking-insights-ux.md) — design principles, color system, page wireframes, data display conventions
 
-## Exercise 2: Anomaly Detection & Duplicate Detection
+## Exercise 2: Anomaly Detection, Duplicate Detection & Booking Manual
 
-The app detects suspicious bookings using multiple detectors that run once at startup against all journal entries. Each detector produces flags with a type, severity (critical/warning), confidence score, and human-readable explanation.
+Each PR was reviewed by code-reviewer, UX-designer, and software-architect agents. All review comments are available directly on the PRs. CI pipeline (`.github/workflows/ci.yml`) runs lint, typecheck, and tests on every push and pull request.
 
-### How Flagging Works
+### Flagging
+
+The app detects suspicious bookings using multiple independent detectors that run once at startup against all journal entries. Each detector produces flags with a type, severity (critical/warning), confidence score, and human-readable explanation.
 
 ```
 journal-entries.json
@@ -37,7 +39,6 @@ journal-entries.json
   |-- Text anomalies (typos, unusual text-account combos, text duplicates)
   |-- Duplicate detection (multi-signal scoring across 9 criteria)
   |-- Pattern detection (unusual amounts, round numbers, pattern breaks)
-  |-- Rule violations (derived from booking rules)
         |
         v
   Flags are merged per document + deduplicated
@@ -46,22 +47,40 @@ journal-entries.json
   BookingService (cached, serves dashboard + list + detail view)
 ```
 
-**Flag types:**
+**Detectors and what they catch:**
 
-- `duplicate_booking` — Multi-signal duplicate (amount + vendor + account + text + date)
-- `text_typo` — Typo in booking text (Levenshtein distance)
-- `unusual_text_account` — Unusual text-account combination
-- `text_duplicate_posting` — Text-based duplicate (same signature, short time gap)
-- `unusual_amount` — Amount deviates significantly from account average
-- `round_number_anomaly` — Suspiciously round amount
-- `pattern_break` — Booking on wrong debit/credit side
-- `missing_counterpart` — Document without counterpart entry
+**Text anomaly detector** (`text-anomaly-detector.ts`) — Analyzes booking text strings across all journal entries:
+- `text_typo` — Compares all unique booking texts pairwise using Levenshtein distance. Texts with distance 1-3 are flagged as potential typos. The less frequent text is the suspected error. Texts are normalized first (trailing dates and numbers stripped) to avoid false positives on date-suffixed entries.
+- `unusual_text_account` — Builds frequency maps of which GL accounts each booking text appears on. If a text has 3+ occurrences and a particular account holds less than 10% of them, that combination is flagged as unusual.
+- `text_duplicate_posting` — Creates a document signature (sorted set of booking text + GL account tuples) for each document. Documents with identical signatures posted within 2 days of each other are flagged as potential double postings.
 
-Violations of derived booking rules are handled separately through `BookingService.getRuleViolations()` and the `/manual/[ruleId]` violations page, not through the flag system.
+**Duplicate detector** (`duplicate-detector.ts`) — Multi-signal weighted scoring across 9 criteria per document pair:
+- Amount (0.25 weight, **required gate** — must match within 0.50 EUR)
+- Vendor/Customer ID (0.20), GL account (0.15), contra account (0.10)
+- Posting date proximity (0.10 — 0 days = 1.0, decreasing to 0.0 beyond 5 days)
+- Booking text similarity (0.10 — exact match or Levenshtein distance ≤3)
+- Document type (0.05), cost center (0.03), tax code (0.02)
 
-CI pipeline: `.github/workflows/ci.yml` runs lint, typecheck, and tests on every push and pull request.
+Gate rules: amount match required (same vendor + same account without same amount is normal business), invoice+payment pairs (KR+KZ, DR+DZ) excluded, same document excluded. Confidence ≥0.75 = critical, ≥0.35 = warning.
 
-Each PR was reviewed by code-reviewer, UX-designer, and software-architect agents. All review comments are available directly on the PRs.
+**Pattern detectors** (`pattern-detectors.ts`) — Structural anomalies in the booking data:
+- `unusual_amount` — Amount exceeds 2x the account's average across all bookings
+- `round_number_anomaly` — Suspiciously round amounts (divisible by 1000) on accounts that normally have variable amounts
+- `pattern_break` — Booking posted on the wrong debit/credit side for its account category (e.g., revenue account on debit side), or personnel expense with a customer reference
+- `missing_counterpart` — Document with only debit or only credit entries (violates double-entry bookkeeping)
+
+### Booking Manual / Rule Mining
+
+Separately from flagging, the app derives booking rules from transaction data to serve as a data-driven "booking manual." Rules describe "how things should be" (prescriptive), while flags describe "what looks wrong" (diagnostic).
+
+**Five rule miners** (`rule-miner.ts`) extract patterns:
+- **Account + tax code** — For accounts with ≥5 lines, identifies the dominant tax code (≥80% concentration). Example: "Account 070000 (Miete) uses tax code V19 in 94% of bookings."
+- **Account + cost center** — Same approach for cost center assignments. Example: "Account 060000 (Gehaelter) always uses cost center 1000."
+- **Document type + account range** — Groups by document type, finds the dominant account range on the debit side (≥70%). Example: "KR documents typically debit operating expense accounts."
+- **Recurring text** — Normalizes booking texts, groups by text pattern. Texts appearing in ≥2 distinct months with the same account ≥80% of the time are identified as recurring. Example: "Miete is posted monthly to account 070000."
+- **Amount range** — For accounts with ≥10 lines, computes the interquartile range (Q1-Q3). Skips accounts with high variance (coefficient of variation >1.5). Example: "Account 070000 typically has amounts between 500 and 2,000 EUR."
+
+Rules are ranked by adjusted confidence (`concentration * sqrt(sampleSize / 30)`) to penalize small samples. The top rules are displayed on the `/manual` page. Violations of derived rules are detected separately and shown on a per-rule violations page (`/manual/[ruleId]`).
 
 ### PR [#1](https://github.com/farambis/booking-insights/pull/1) — Text-Based Anomaly Detection
 
@@ -76,7 +95,7 @@ Follow-up fixes:
 
 ### PR [#3](https://github.com/farambis/booking-insights/pull/3) — Multi-Signal Duplicate Booking Detection
 
-Replaces basic text-signature duplicate detection with weighted scoring across 9 signals (amount, vendor/customer, GL account, contra account, posting date, booking text, document type, cost center, tax code).
+Replaces basic text-signature duplicate detection with weighted scoring across 9 signals. See "Duplicate detector" above for the full signal list and weights.
 
 **Key decision:** Amount match (≤0.50 EUR difference) is a required gate. Same vendor + same account without matching amount is normal business activity, not a duplicate.
 
@@ -87,7 +106,7 @@ Follow-up fixes:
 
 ### PR [#2](https://github.com/farambis/booking-insights/pull/2) — Booking Manual / Rule Mining
 
-Derives booking rules from transaction data to serve as a data-driven "booking manual." Five miners extract patterns: account+tax code rules, account+cost center rules, document type+account range rules, recurring text patterns, and amount range rules. Rules are separate from flags — they describe "how things should be" (prescriptive), while flags describe "what looks wrong" (diagnostic). `rule_violation` flags are emitted when bookings deviate from the derived rules.
+Five rule miners + orchestrator, rule violation detection, and a dedicated UI (`/manual` page with rule cards, `/manual/[ruleId]` for per-rule violations). See "Booking Manual / Rule Mining" above for the full approach.
 
 **Key finding:** Initial confidence ranking was effectively `confidence²` because `confidence` and `supportRatio` were identical.
 
