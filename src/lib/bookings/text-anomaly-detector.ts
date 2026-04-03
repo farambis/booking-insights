@@ -80,23 +80,40 @@ export function detectTypos(lines: JournalEntryLine[]): FlagMap {
       const distance = levenshteinDistance(normA, normB);
       if (distance < 1 || distance > 3) continue;
 
-      // The less frequent text is the suspected typo
+      // The less frequent text is the suspected typo.
+      // When counts are equal, flag both — we can't tell which is correct.
       const countA = textCount.get(a)!;
       const countB = textCount.get(b)!;
-      const [typoText, correctText] = countA <= countB ? [a, b] : [b, a];
-
       const confidence = typoConfidence(distance);
-      const typoLines = textLines.get(typoText)!;
 
-      for (const line of typoLines) {
-        addFlag(result, flagKey(line.document_id, line.line_id), {
-          type: "text_typo",
-          severity: "warning",
-          explanation: `"${typoText}" may be a typo of "${correctText}" (edit distance: ${distance})`,
-          confidence,
-          detectedAt: now,
-          relatedDocumentId: null,
-        });
+      if (countA === countB) {
+        // Equal frequency — flag both sides with reduced confidence
+        const reducedConfidence = confidence * 0.5;
+        for (const [suspect, other] of [[a, b], [b, a]] as const) {
+          for (const line of textLines.get(suspect)!) {
+            addFlag(result, flagKey(line.document_id, line.line_id), {
+              type: "text_typo",
+              severity: "warning",
+              explanation: `"${suspect}" and "${other}" are very similar (edit distance: ${distance}) — one may be a typo`,
+              confidence: reducedConfidence,
+              detectedAt: now,
+              relatedDocumentId: null,
+            });
+          }
+        }
+      } else {
+        const [typoText, correctText] =
+          countA < countB ? [a, b] : [b, a];
+        for (const line of textLines.get(typoText)!) {
+          addFlag(result, flagKey(line.document_id, line.line_id), {
+            type: "text_typo",
+            severity: "warning",
+            explanation: `"${typoText}" may be a typo of "${correctText}" (edit distance: ${distance}, appears ${textCount.get(typoText)} vs ${textCount.get(correctText)} times)`,
+            confidence,
+            detectedAt: now,
+            relatedDocumentId: null,
+          });
+        }
       }
     }
   }
