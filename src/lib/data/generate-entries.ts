@@ -81,8 +81,29 @@ const CUSTOMER_TEXTS_BASE = [
   "Verkauf an Kunde",
 ];
 
+const GERMAN_MONTHS = [
+  "Januar", "Februar", "März", "April", "Mai", "Juni",
+  "Juli", "August", "September", "Oktober", "November", "Dezember",
+];
+
+/** Compute the two months preceding the current date */
+function getDateRange(): { year1: number; month1: number; year2: number; month2: number } {
+  const now = new Date();
+  // Last month (month2) and the month before that (month1)
+  const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const twoMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 2, 1);
+  return {
+    year1: twoMonthsAgo.getFullYear(),
+    month1: twoMonthsAgo.getMonth() + 1,
+    year2: lastMonth.getFullYear(),
+    month2: lastMonth.getMonth() + 1,
+  };
+}
+
+const DATE_RANGE = getDateRange();
+
 const EXPENSE_TEXTS: Record<string, string[]> = {
-  "070000": ["Miete Büro Januar", "Miete Büro Februar"],
+  "070000": [`Miete Büro ${GERMAN_MONTHS[DATE_RANGE.month1 - 1]}`, `Miete Büro ${GERMAN_MONTHS[DATE_RANGE.month2 - 1]}`],
   "070100": ["Stromkosten", "Gaskosten", "Heizkosten"],
   "070200": ["Telefonkosten", "Internetkosten"],
   "070300": ["Büromaterial", "Druckerpatronen", "Kopierpapier"],
@@ -107,16 +128,17 @@ function getBookingText(
   rng: () => number,
   account: GlAccount,
   docType: string,
+  year: number,
   month: number,
 ): string {
-  const monthName = month === 1 ? "Januar" : "Februar";
+  const monthName = GERMAN_MONTHS[month - 1];
 
   if (docType === "KR" || docType === "KZ") {
     return pick(rng, VENDOR_TEXTS);
   }
   if (docType === "DR" || docType === "DZ") {
     const base = pick(rng, CUSTOMER_TEXTS_BASE);
-    return `${base} 2025-${String(month).padStart(2, "0")}-${String(randInt(rng, 1, 28)).padStart(2, "0")}`;
+    return `${base} ${year}-${String(month).padStart(2, "0")}-${String(randInt(rng, 1, 28)).padStart(2, "0")}`;
   }
   if (account.category === "Personnel expenses") {
     const base = account.name.includes("Gehalt") ? "Gehälter" : "Löhne";
@@ -126,8 +148,11 @@ function getBookingText(
   const specific = EXPENSE_TEXTS[account.number];
   if (specific) {
     let text = pick(rng, specific);
-    if (text.includes("Januar") || text.includes("Februar")) {
-      text = text.replace(/Januar|Februar/, monthName);
+    // Replace month names in templates with current month
+    const month1Name = GERMAN_MONTHS[DATE_RANGE.month1 - 1];
+    const month2Name = GERMAN_MONTHS[DATE_RANGE.month2 - 1];
+    if (text.includes(month1Name) || text.includes(month2Name)) {
+      text = text.replace(new RegExp(`${month1Name}|${month2Name}`), monthName);
     }
     return text;
   }
@@ -315,18 +340,26 @@ export function generateJournalEntries(): GenerationResult {
   const docCount = randInt(rng, 150, 170);
   let docNumber = 5000000001;
 
-  // Generate posting dates spread across Jan-Feb 2025
+  // Generate posting dates spread across the last two months
+  function daysInMonth(year: number, month: number): number {
+    return new Date(year, month, 0).getDate();
+  }
+
   function randomDate(): string {
-    const month = rng() < 0.5 ? 1 : 2;
-    const maxDay = month === 1 ? 31 : 28;
+    const isFirst = rng() < 0.5;
+    const year = isFirst ? DATE_RANGE.year1 : DATE_RANGE.year2;
+    const month = isFirst ? DATE_RANGE.month1 : DATE_RANGE.month2;
+    const maxDay = daysInMonth(year, month);
     const day = randInt(rng, 1, maxDay);
-    return `2025-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+    return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
   }
 
   for (let d = 0; d < docCount; d++) {
     const scenario = pickScenario(rng);
     const date = randomDate();
-    const month = parseInt(date.split("-")[1], 10);
+    const dateParts = date.split("-");
+    const year = parseInt(dateParts[0], 10);
+    const month = parseInt(dateParts[1], 10);
     const docId = String(docNumber++);
 
     const debitAccount = getAccountByCategory(
@@ -387,7 +420,7 @@ export function generateJournalEntries(): GenerationResult {
         amount: amounts[i],
         currency: "EUR",
         debit_credit: "S",
-        booking_text: getBookingText(rng, acct, scenario.docType, month),
+        booking_text: getBookingText(rng, acct, scenario.docType, year, month),
         vendor_id: vendorId,
         customer_id: customerId,
         tax_code: getTaxCode(scenario.docType, acct),
@@ -406,7 +439,7 @@ export function generateJournalEntries(): GenerationResult {
       amount: totalAmount,
       currency: "EUR",
       debit_credit: "H",
-      booking_text: getBookingText(rng, creditAccount, scenario.docType, month),
+      booking_text: getBookingText(rng, creditAccount, scenario.docType, year, month),
       vendor_id: vendorId,
       customer_id: customerId,
       tax_code: getTaxCode(scenario.docType, creditAccount),
@@ -425,8 +458,8 @@ export function generateJournalEntries(): GenerationResult {
     ["Korrektur", "Korrektru"],
     ["Periodische Abgrenzung", "Periodiche Abgrenzung"],
     ["Buchung laut Beleg", "Buchung laut Bleg"],
-    ["Löhne Januar", "Löhne Janua"],
-    ["Löhne Februar", "Löhne Ferbruar"],
+    [`Löhne ${GERMAN_MONTHS[DATE_RANGE.month1 - 1]}`, `Löhne ${GERMAN_MONTHS[DATE_RANGE.month1 - 1].slice(0, -1)}`],
+    [`Löhne ${GERMAN_MONTHS[DATE_RANGE.month2 - 1]}`, `Löhne ${GERMAN_MONTHS[DATE_RANGE.month2 - 1].slice(0, -2)}uar`],
     ["Umbuchung", "Umbuuchng"],
     ["Reisekosten Vertrieb", "Reisekosten Vetrieb"],
     ["Reisekosten Messe", "Reisekosten Mese"],
@@ -459,21 +492,28 @@ export function generateJournalEntries(): GenerationResult {
     // Create a near-duplicate document
     const newDocId = String(docNumber++);
     const [yearStr, monthStr, dayStr] = orig.posting_date.split("-");
-    const year = parseInt(yearStr, 10);
-    const month = parseInt(monthStr, 10);
+    const dupYear = parseInt(yearStr, 10);
+    const dupMonth = parseInt(monthStr, 10);
     let day = parseInt(dayStr, 10) + (rng() < 0.5 ? 1 : 2);
-    let newMonth = month;
-    const daysInMonth = newMonth === 2 ? 28 : newMonth === 1 ? 31 : 30;
-    if (day > daysInMonth) {
-      day = day - daysInMonth;
+    let newMonth = dupMonth;
+    let newYear = dupYear;
+    const maxDays = new Date(newYear, newMonth, 0).getDate();
+    if (day > maxDays) {
+      day = day - maxDays;
       newMonth++;
+      if (newMonth > 12) {
+        newMonth = 1;
+        newYear++;
+      }
     }
-    // Clamp to Feb 28
-    if (newMonth > 2 || (newMonth === 2 && day > 28)) {
-      newMonth = 2;
-      day = 28;
+    // Clamp to last day of the range
+    const endMaxDays = new Date(DATE_RANGE.year2, DATE_RANGE.month2, 0).getDate();
+    if (newYear > DATE_RANGE.year2 || (newYear === DATE_RANGE.year2 && newMonth > DATE_RANGE.month2)) {
+      newYear = DATE_RANGE.year2;
+      newMonth = DATE_RANGE.month2;
+      day = endMaxDays;
     }
-    const newDate = `${year}-${String(newMonth).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+    const newDate = `${newYear}-${String(newMonth).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 
     // Find all lines of the original document
     const origLines = allLines.filter(
@@ -747,7 +787,9 @@ export function generateJournalEntries(): GenerationResult {
   for (let mc = 0; mc < 2; mc++) {
     const newDocId = String(docNumber++);
     const date = randomDate();
-    const month = parseInt(date.split("-")[1], 10);
+    const mcParts = date.split("-");
+    const mcYear = parseInt(mcParts[0], 10);
+    const month = parseInt(mcParts[1], 10);
     const acct = getAccountByCategory(rng, "Operating expenses", weighted);
     const amount = round2(randInt(rng, 500, 3000) + rng());
 
@@ -762,7 +804,7 @@ export function generateJournalEntries(): GenerationResult {
       amount,
       currency: "EUR",
       debit_credit: "S",
-      booking_text: getBookingText(rng, acct, "SA", month),
+      booking_text: getBookingText(rng, acct, "SA", mcYear, month),
       vendor_id: null,
       customer_id: null,
       tax_code: null,

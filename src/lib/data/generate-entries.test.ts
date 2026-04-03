@@ -17,10 +17,17 @@ describe("generateJournalEntries", () => {
     expect(second.lines).toEqual(lines);
   });
 
-  it("all posting dates are within 2025-01-01 to 2025-02-28", () => {
+  it("all posting dates are within the last two months", () => {
+    const now = new Date();
+    const twoMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 2, 1);
+    const startDate = `${twoMonthsAgo.getFullYear()}-${String(twoMonthsAgo.getMonth() + 1).padStart(2, "0")}-01`;
+    const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const endDay = new Date(lastMonth.getFullYear(), lastMonth.getMonth() + 1, 0).getDate();
+    const endDate = `${lastMonth.getFullYear()}-${String(lastMonth.getMonth() + 1).padStart(2, "0")}-${String(endDay).padStart(2, "0")}`;
+
     for (const line of lines) {
-      expect(line.posting_date >= "2025-01-01").toBe(true);
-      expect(line.posting_date <= "2025-02-28").toBe(true);
+      expect(line.posting_date >= startDate).toBe(true);
+      expect(line.posting_date <= endDate).toBe(true);
     }
   });
 
