@@ -2,6 +2,8 @@
 
 Finanz-Analyse-App auf Basis von Buchungsdaten (Journal Entries) im SAP-Stil.
 
+**Live Demo:** https://booking-insights-farambis-projects.vercel.app
+
 ## Setup
 
 ```bash

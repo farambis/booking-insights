@@ -62,8 +62,8 @@ describe("format", () => {
   });
 
   describe("flagTypeLabel", () => {
-    it("returns label for duplicate_entry", () => {
-      expect(flagTypeLabel("duplicate_entry")).toBe("Duplicate Entry");
+    it("returns label for duplicate_booking", () => {
+      expect(flagTypeLabel("duplicate_booking")).toBe("Duplicate Booking");
     });
 
     it("returns label for missing_counterpart", () => {
