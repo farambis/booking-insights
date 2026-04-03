@@ -50,21 +50,21 @@ Detect suspicious booking texts in SAP journal entry data using string compariso
 
 ### New Files
 
-| File | Purpose |
-|------|---------|
-| `src/lib/bookings/levenshtein.ts` | Pure Levenshtein distance function |
-| `src/lib/bookings/levenshtein.test.ts` | Tests for Levenshtein |
-| `src/lib/bookings/text-anomaly-detector.ts` | Three detection rules + orchestrator |
-| `src/lib/bookings/text-anomaly-detector.test.ts` | Tests for each detection rule |
+| File                                             | Purpose                              |
+| ------------------------------------------------ | ------------------------------------ |
+| `src/lib/bookings/levenshtein.ts`                | Pure Levenshtein distance function   |
+| `src/lib/bookings/levenshtein.test.ts`           | Tests for Levenshtein                |
+| `src/lib/bookings/text-anomaly-detector.ts`      | Three detection rules + orchestrator |
+| `src/lib/bookings/text-anomaly-detector.test.ts` | Tests for each detection rule        |
 
 ### Modified Files
 
-| File | Change |
-|------|--------|
-| `src/lib/bookings/booking.types.ts` | Add `text_typo`, `unusual_text_account`, `text_duplicate_posting` to `FlagType` |
-| `src/lib/bookings/format.ts` | Add display labels for new flag types |
-| `src/lib/bookings/local-booking-service.ts` | Wire detector into `transformAndFlag` (replace empty `flagMap`) |
-| `src/app/(app)/bookings/page.tsx` | Add new flag types to filter bar options |
+| File                                        | Change                                                                          |
+| ------------------------------------------- | ------------------------------------------------------------------------------- |
+| `src/lib/bookings/booking.types.ts`         | Add `text_typo`, `unusual_text_account`, `text_duplicate_posting` to `FlagType` |
+| `src/lib/bookings/format.ts`                | Add display labels for new flag types                                           |
+| `src/lib/bookings/local-booking-service.ts` | Wire detector into `transformAndFlag` (replace empty `flagMap`)                 |
+| `src/app/(app)/bookings/page.tsx`           | Add new flag types to filter bar options                                        |
 
 ### Data Flow
 
@@ -98,13 +98,13 @@ Detection runs once at app startup. Results are cached for the lifetime of the s
 
 ## Thresholds Summary
 
-| Parameter | Value | Rationale |
-|-----------|-------|-----------|
-| Levenshtein max distance | 3 | Beyond 3, strings are too different to be typos |
-| Min text occurrences for combo detection | 3 | Need enough data points to establish a pattern |
-| Unusual combo threshold | < 10% of text's total | Distinguishes rare from common pairings |
-| Date proximity for duplicates | 2 days | Accounting duplicates are typically posted within a day or two |
-| Signature match | Exact | Start strict, relax to Jaccard >= 0.8 if needed |
+| Parameter                                | Value                 | Rationale                                                      |
+| ---------------------------------------- | --------------------- | -------------------------------------------------------------- |
+| Levenshtein max distance                 | 3                     | Beyond 3, strings are too different to be typos                |
+| Min text occurrences for combo detection | 3                     | Need enough data points to establish a pattern                 |
+| Unusual combo threshold                  | < 10% of text's total | Distinguishes rare from common pairings                        |
+| Date proximity for duplicates            | 2 days                | Accounting duplicates are typically posted within a day or two |
+| Signature match                          | Exact                 | Start strict, relax to Jaccard >= 0.8 if needed                |
 
 ## Pull Request & Commit History
 
@@ -113,6 +113,7 @@ Detection runs once at app startup. Results are cached for the lifetime of the s
 Initial implementation of all three detection rules, wired into the existing flag engine. Follow-up fixes were applied as separate commits.
 
 **Known issues identified during code review:**
+
 - **99.8% false positive rate in typo detector** — date-suffixed texts like "Ausgangsrechnung 2025-01-15" vs "2025-01-16" differ by 1-2 characters (the date digits), causing 1,221 false positive pairs out of 1,223 total.
 - **Missing flag types in filter whitelist** — new flag types were not added to `VALID_FLAG_TYPES` in `filter-params.ts`, so the flag dropdown filter silently ignored them.
 - **Frozen timestamp** — `detectedAt` set at module scope instead of per detection call.
@@ -124,3 +125,13 @@ Initial implementation of all three detection rules, wired into the existing fla
 1. **`9fb8b9a`** — Fix: add new text flag types to `VALID_FLAG_TYPES` whitelist. The three new types (`text_typo`, `unusual_text_account`, `text_duplicate_posting`) were missing from the URL parameter parser, so selecting them in the flag dropdown had no effect.
 
 2. **`cd5fc78`** — Normalize booking texts before comparison to reduce false positives. Added `normalizeForComparison()` which strips trailing ISO dates and numbers before Levenshtein comparison. Texts like "Ausgangsrechnung 2025-01-15" and "Ausgangsrechnung 2025-01-16" now normalize to the same base string and are skipped. Same normalization applied to duplicate posting signatures. Eliminated all 1,221 false positives while preserving the 2 genuine typo detections.
+
+### PR [#3](https://github.com/farambis/booking-insights/pull/3) — Add multi-signal duplicate booking detection (merged)
+
+Replaced the basic text-signature-only duplicate detection with a multi-signal weighted scoring engine (`duplicate-detector.ts`). Scores 9 signals (amount, vendor/customer, GL account, contra account, posting date, booking text via Levenshtein, document type, cost center, tax code) with configurable weights. Amount match (≤0.50 EUR) is a required gate — same vendor + same account without matching amount is not flagged.
+
+**Review findings and follow-up fixes:**
+
+1. **Confidence shown as percentage** — Review found that "High/Medium/Low" tier labels discard useful information (a score of 0.76 and 0.99 looked identical). Changed `FlagExplanationCard` to show confidence as percentage (e.g., "87%") with color coding: red ≥75%, amber ≥50%, neutral <50%. This lets accountants calibrate their own response to the confidence level. Removed the `confidenceLabel` indirection from the detail page.
+
+2. **Related document inlined in flag card** — Review found that accountants had to click through to see the related document's details. Added an inline preview card inside `FlagExplanationCard` showing the related document's ID, description, posting date, amount, and account. The card is clickable for full navigation. Falls back to a plain link when document info is not available.
