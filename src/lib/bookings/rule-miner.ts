@@ -226,7 +226,10 @@ export function mineDocumentTypeAccountRules(
       }
     }
 
-    const classifiedCount = [...rangeCounts.values()].reduce((s, n) => s + n, 0);
+    const classifiedCount = [...rangeCounts.values()].reduce(
+      (s, n) => s + n,
+      0,
+    );
     if (classifiedCount === 0) continue;
     const concentration = dominantCount / classifiedCount;
     if (concentration < MIN_CONCENTRATION_DOC_TYPE) continue;
@@ -247,7 +250,7 @@ export function mineDocumentTypeAccountRules(
         `Account range: ${dominantRange}`,
       ),
       violationCount: docTypeLines.length - dominantCount,
-      scope: { documentType: docType },
+      scope: { documentType: docType, accountRange: dominantRange },
     });
   }
 
