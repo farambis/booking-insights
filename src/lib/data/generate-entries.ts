@@ -137,6 +137,29 @@ function getBookingText(
 
 // -- Cost center assignment --
 // Expense accounts get cost centers, balance sheet accounts don't.
+// Cost center assignment is deterministic per account category to create
+// realistic patterns (personnel → 1000, IT → 4000, etc.)
+const ACCOUNT_COST_CENTER_MAP: Record<string, string> = {
+  "060000": "1000", // Gehälter → Administration
+  "060100": "1000", // Löhne → Administration
+  "060200": "1000", // Sozialabgaben → Administration
+  "070000": "1000", // Miete → Administration
+  "070100": "1000", // Nebenkosten → Administration
+  "070200": "2000", // Kommunikation → Sales
+  "070300": "1000", // Bürobedarf → Administration
+  "070400": "1000", // Versicherungen → Administration
+  "070500": "2000", // Reisekosten → Sales
+  "070600": "2000", // Marketing → Sales
+  "070700": "1000", // Instandhaltung → Administration
+  "070800": "2000", // Versand → Sales
+  "070900": "5000", // Beratung → Management
+  "071000": "1000", // Abschreibungen → Administration
+  "071100": "4000", // IT → IT
+  "050000": "3000", // Wareneinkauf → Production
+  "050100": "3000", // Rohstoffe → Production
+  "050200": "3000", // Fremdleistungen → Production
+};
+
 function assignCostCenter(
   rng: () => number,
   account: GlAccount,
@@ -147,6 +170,12 @@ function assignCostCenter(
     "Cost of goods sold",
   ];
   if (!expenseCategories.includes(account.category)) return null;
+
+  // Use deterministic mapping (90% of the time) for realistic patterns
+  const mapped = ACCOUNT_COST_CENTER_MAP[account.number];
+  if (mapped && rng() < 0.9) return mapped;
+
+  // 10% random assignment for natural variation
   return pick(rng, COST_CENTERS).id;
 }
 
@@ -389,22 +418,18 @@ export function generateJournalEntries(): GenerationResult {
 
   // 1. Near-duplicate booking texts (typos)
   // Use texts that are guaranteed to exist: expense texts + common texts
+  // Only target texts that actually appear in the generated data
   const typos: [string, string][] = [
     ["Büromaterial", "Büromateiral"],
     ["Telefonkosten", "Telefonksoten"],
-    ["Stromkosten", "Stormkosten"],
-    ["Kopierpapier", "Kopeirpapier"],
-    ["Internetkosten", "Interntkosten"],
-    ["Heizkosten", "Heizkotsen"],
     ["Korrektur", "Korrektru"],
     ["Periodische Abgrenzung", "Periodiche Abgrenzung"],
     ["Buchung laut Beleg", "Buchung laut Bleg"],
     ["Löhne Januar", "Löhne Janua"],
     ["Löhne Februar", "Löhne Ferbruar"],
-    ["Wartung Aufzug", "Warung Aufzug"],
-    ["Reisekosten Vertrieb", "Reisekosten Vetrieb"],
     ["Umbuchung", "Umbuuchng"],
-    ["Steuerberater", "Steuerberter"],
+    ["Reisekosten Vertrieb", "Reisekosten Vetrieb"],
+    ["Reisekosten Messe", "Reisekosten Mese"],
   ];
 
   const usedDocIds = new Set<string>();
@@ -429,7 +454,7 @@ export function generateJournalEntries(): GenerationResult {
     (l) => l.line_id === 1 && l.debit_credit === "S",
   );
   let doubleCount = 0;
-  for (let i = 0; i < doubleCandidates.length - 1 && doubleCount < 2; i++) {
+  for (let i = 0; i < doubleCandidates.length - 1 && doubleCount < 3; i++) {
     const orig = doubleCandidates[i];
     // Create a near-duplicate document
     const newDocId = String(docNumber++);
@@ -617,7 +642,8 @@ export function generateJournalEntries(): GenerationResult {
   }
 
   // 5. Unusual amounts: inject 3 lines with amounts 5-10x the normal range
-  const unusualAmountAccounts = ["070000", "070300", "070600"];
+  // Target accounts with ≥10 lines so the detector has enough data
+  const unusualAmountAccounts = ["090000", "030000", "090100"];
   for (const targetAccount of unusualAmountAccounts) {
     const idx = allLines.findIndex(
       (l) =>
