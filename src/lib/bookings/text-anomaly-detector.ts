@@ -106,20 +106,23 @@ export function detectTypos(lines: JournalEntryLine[]): FlagMap {
 
 /**
  * Detect unusual text-account combinations using frequency analysis.
- * Flags lines where the text has >= 3 total occurrences and the account
- * holds < 10% of that text's total.
+ * Uses normalized texts (dates/numbers stripped) to avoid false positives
+ * from date-suffixed booking texts. Flags lines where the normalized text
+ * has >= 5 total occurrences and the account holds < 5% of that text's total.
  */
 export function detectUnusualTextAccountCombos(
   lines: JournalEntryLine[],
 ): FlagMap {
   const result: FlagMap = new Map();
 
-  // Build text -> account -> count
+  // Build normalized text -> account -> count
   const textAccountCounts = new Map<string, Map<string, number>>();
   const textTotals = new Map<string, number>();
+  const lineNormalized = new Map<JournalEntryLine, string>();
 
   for (const line of lines) {
-    const text = line.booking_text;
+    const text = normalizeForComparison(line.booking_text);
+    lineNormalized.set(line, text);
     const account = line.gl_account;
 
     if (!textAccountCounts.has(text)) {
@@ -132,16 +135,22 @@ export function detectUnusualTextAccountCombos(
 
   // Flag unusual combinations
   for (const line of lines) {
-    const text = line.booking_text;
+    const text = lineNormalized.get(line)!;
     const account = line.gl_account;
     const total = textTotals.get(text)!;
 
-    if (total < 3) continue;
+    if (total < 5) continue;
 
-    const accountCount = textAccountCounts.get(text)!.get(account)!;
+    // Only flag if the text has a clear dominant account (>=50% on one account).
+    // Vendor names naturally spread across many accounts — that's not anomalous.
+    const accountMap = textAccountCounts.get(text)!;
+    const maxAccountCount = Math.max(...accountMap.values());
+    if (maxAccountCount / total < 0.5) continue;
+
+    const accountCount = accountMap.get(account)!;
     const ratio = accountCount / total;
 
-    if (ratio < 0.1) {
+    if (ratio < 0.05) {
       const confidence = 1 - ratio;
       addFlag(result, flagKey(line.document_id, line.line_id), {
         type: "unusual_text_account",
