@@ -70,7 +70,7 @@ export function ManualRuleCard({ rule }: ManualRuleCardProps) {
               <a
                 key={e.documentId}
                 href={`/bookings/${e.documentId}`}
-                className="text-xs text-blue-600 underline-offset-2 hover:underline"
+                className="font-mono text-xs text-blue-600 underline-offset-2 hover:underline"
               >
                 {e.documentId}
               </a>
