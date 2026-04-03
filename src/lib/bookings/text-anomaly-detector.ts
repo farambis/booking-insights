@@ -1,21 +1,7 @@
 import type { JournalEntryLine } from "@/lib/data/journal-entry.types";
-import type { BookingFlag } from "./booking.types";
+import type { FlagMap } from "./flag-utils";
+import { flagKey, addFlag } from "./flag-utils";
 import { levenshteinDistance } from "./levenshtein";
-
-/** Map key format: "documentId:lineId" */
-type FlagMap = Map<string, BookingFlag[]>;
-
-function flagKey(documentId: string, lineId: number): string {
-  return `${documentId}:${lineId}`;
-}
-
-function addFlag(map: FlagMap, key: string, flag: BookingFlag): void {
-  const existing = map.get(key) ?? [];
-  existing.push(flag);
-  map.set(key, existing);
-}
-
-const now = new Date().toISOString();
 
 /**
  * Strip trailing ISO dates (YYYY-MM-DD) and trailing numbers from booking texts
@@ -40,7 +26,10 @@ function typoConfidence(distance: number): number {
  * Detect suspected typos via pairwise Levenshtein distance on unique booking texts.
  * The less frequent text in each near-duplicate pair is flagged.
  */
-export function detectTypos(lines: JournalEntryLine[]): FlagMap {
+export function detectTypos(
+  lines: JournalEntryLine[],
+  detectedAt: string = new Date().toISOString(),
+): FlagMap {
   const result: FlagMap = new Map();
 
   // Build text -> count and text -> lines mappings
@@ -99,7 +88,7 @@ export function detectTypos(lines: JournalEntryLine[]): FlagMap {
               severity: "warning",
               explanation: `"${suspect}" and "${other}" are very similar (edit distance: ${distance}) — one may be a typo`,
               confidence: reducedConfidence,
-              detectedAt: now,
+              detectedAt,
               relatedDocumentId: null,
             });
           }
@@ -112,7 +101,7 @@ export function detectTypos(lines: JournalEntryLine[]): FlagMap {
             severity: "warning",
             explanation: `"${typoText}" may be a typo of "${correctText}" (edit distance: ${distance}, appears ${textCount.get(typoText)} vs ${textCount.get(correctText)} times)`,
             confidence,
-            detectedAt: now,
+            detectedAt,
             relatedDocumentId: null,
           });
         }
@@ -131,6 +120,7 @@ export function detectTypos(lines: JournalEntryLine[]): FlagMap {
  */
 export function detectUnusualTextAccountCombos(
   lines: JournalEntryLine[],
+  detectedAt: string = new Date().toISOString(),
 ): FlagMap {
   const result: FlagMap = new Map();
 
@@ -176,7 +166,7 @@ export function detectUnusualTextAccountCombos(
         severity: "warning",
         explanation: `"${text}" is rarely posted to account ${account} (${accountCount}/${total} = ${Math.round(ratio * 100)}%)`,
         confidence,
-        detectedAt: now,
+        detectedAt,
         relatedDocumentId: null,
       });
     }
@@ -191,6 +181,7 @@ export function detectUnusualTextAccountCombos(
  */
 export function detectTextDuplicatePostings(
   lines: JournalEntryLine[],
+  detectedAt: string = new Date().toISOString(),
 ): FlagMap {
   const result: FlagMap = new Map();
 
@@ -251,7 +242,7 @@ export function detectTextDuplicatePostings(
             severity: "critical",
             explanation: `Document ${docIds[i]} and ${docIds[j]} have identical text-account signatures and were posted ${daysDiff} day(s) apart`,
             confidence: 0.8,
-            detectedAt: now,
+            detectedAt,
             relatedDocumentId: docIds[j],
           });
         }
@@ -262,7 +253,7 @@ export function detectTextDuplicatePostings(
             severity: "critical",
             explanation: `Document ${docIds[j]} and ${docIds[i]} have identical text-account signatures and were posted ${daysDiff} day(s) apart`,
             confidence: 0.8,
-            detectedAt: now,
+            detectedAt,
             relatedDocumentId: docIds[i],
           });
         }
@@ -276,7 +267,10 @@ export function detectTextDuplicatePostings(
 /**
  * Orchestrator: run all three text anomaly detectors and merge results.
  */
-export function detectTextAnomalies(lines: JournalEntryLine[]): FlagMap {
+export function detectTextAnomalies(
+  lines: JournalEntryLine[],
+  detectedAt: string = new Date().toISOString(),
+): FlagMap {
   const merged: FlagMap = new Map();
 
   const detectors = [
@@ -286,7 +280,7 @@ export function detectTextAnomalies(lines: JournalEntryLine[]): FlagMap {
   ];
 
   for (const detect of detectors) {
-    const flags = detect(lines);
+    const flags = detect(lines, detectedAt);
     for (const [key, flagList] of flags) {
       const existing = merged.get(key) ?? [];
       existing.push(...flagList);

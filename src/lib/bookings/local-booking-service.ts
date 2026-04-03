@@ -1,5 +1,8 @@
 import journalEntries from "@/lib/data/journal-entries.json";
-import { GL_ACCOUNTS, COST_CENTERS } from "@/lib/data/account-master";
+import {
+  lookupAccountName,
+  lookupCostCenterName,
+} from "@/lib/data/account-master";
 import type { JournalEntryLine } from "@/lib/data/journal-entry.types";
 import type {
   BookingDetail,
@@ -25,15 +28,6 @@ import { mineBookingRules } from "./rule-miner";
 import { findRuleViolations } from "./rule-violations";
 import type { BookingManual } from "./rule.types";
 
-function lookupAccountName(glAccount: string): string | null {
-  return GL_ACCOUNTS.find((a) => a.number === glAccount)?.name ?? null;
-}
-
-function lookupCostCenterName(costCenter: string | null): string | null {
-  if (!costCenter) return null;
-  return COST_CENTERS.find((c) => c.id === costCenter)?.name ?? null;
-}
-
 function deriveStatus(flags: BookingFlag[]): BookingStatus {
   if (flags.some((f) => f.severity === "critical")) return "critical";
   if (flags.some((f) => f.severity === "warning")) return "warning";
@@ -54,13 +48,17 @@ function groupByDocument(
 }
 
 /** Transform raw journal entries into BookingDetail[] */
-function transformAndFlag(rawLines: JournalEntryLine[]): BookingDetail[] {
-  const textFlagMap = detectTextAnomalies(rawLines);
-  const dupFlagMap = detectDuplicateBookings(rawLines);
-  const unusualAmountMap = detectUnusualAmounts(rawLines);
-  const roundNumberMap = detectRoundNumberAnomalies(rawLines);
-  const patternBreakMap = detectPatternBreaks(rawLines);
-  const missingCounterpartMap = detectMissingCounterparts(rawLines);
+export function transformAndFlag(
+  rawLines: JournalEntryLine[],
+): BookingDetail[] {
+  const detectedAt = new Date().toISOString();
+
+  const textFlagMap = detectTextAnomalies(rawLines, detectedAt);
+  const dupFlagMap = detectDuplicateBookings(rawLines, detectedAt);
+  const unusualAmountMap = detectUnusualAmounts(rawLines, detectedAt);
+  const roundNumberMap = detectRoundNumberAnomalies(rawLines, detectedAt);
+  const patternBreakMap = detectPatternBreaks(rawLines, detectedAt);
+  const missingCounterpartMap = detectMissingCounterparts(rawLines, detectedAt);
 
   // Merge all flag maps
   const flagMap = new Map<string, BookingFlag[]>();

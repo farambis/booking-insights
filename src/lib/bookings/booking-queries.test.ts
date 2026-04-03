@@ -4,7 +4,11 @@ import type {
   BookingFilters,
   BookingListItem,
 } from "./booking.types";
-import { queryBookings, buildDashboardSummary } from "./booking-queries";
+import {
+  queryBookings,
+  buildDashboardSummary,
+  buildCounts,
+} from "./booking-queries";
 
 function makeBooking(
   overrides: Partial<BookingListItem> = {},
@@ -457,6 +461,36 @@ describe("booking-queries", () => {
       const summary = buildDashboardSummary(bookings);
       expect(summary.recentCritical).toHaveLength(1);
       expect(summary.recentCritical[0].documentId).toBe("5000000001");
+    });
+  });
+
+  describe("buildCounts", () => {
+    const bookings: BookingListItem[] = [
+      makeBooking({ documentId: "D1", status: "critical" }),
+      makeBooking({ documentId: "D2", status: "warning" }),
+      makeBooking({ documentId: "D3", status: "clean" }),
+      makeBooking({ documentId: "D4", status: "clean" }),
+      makeBooking({ documentId: "D5", status: "critical" }),
+    ];
+
+    it("counts total documents", () => {
+      const counts = buildCounts(bookings);
+      expect(counts.totalDocuments).toBe(5);
+    });
+
+    it("counts critical, warning, and clean documents", () => {
+      const counts = buildCounts(bookings);
+      expect(counts.criticalCount).toBe(2);
+      expect(counts.warningCount).toBe(1);
+      expect(counts.cleanCount).toBe(2);
+    });
+
+    it("returns zeros for empty array", () => {
+      const counts = buildCounts([]);
+      expect(counts.totalDocuments).toBe(0);
+      expect(counts.criticalCount).toBe(0);
+      expect(counts.warningCount).toBe(0);
+      expect(counts.cleanCount).toBe(0);
     });
   });
 });

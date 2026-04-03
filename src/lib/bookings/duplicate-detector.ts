@@ -1,9 +1,6 @@
 import type { JournalEntryLine } from "@/lib/data/journal-entry.types";
-import type { BookingFlag } from "./booking.types";
+import type { FlagMap } from "./flag-utils";
 import { levenshteinDistance } from "./levenshtein";
-
-/** Map key format: "documentId:lineId" */
-type FlagMap = Map<string, BookingFlag[]>;
 
 /** Summary of a document derived from its journal entry lines */
 export interface DocumentSummary {
@@ -55,8 +52,6 @@ const PAYMENT_TYPES = new Set(["KZ", "DZ"]);
 
 const AMOUNT_ABSOLUTE_FLOOR = 0.5;
 
-const now = new Date().toISOString();
-
 function daysBetween(dateA: string, dateB: string): number {
   const a = new Date(dateA + "T00:00:00");
   const b = new Date(dateB + "T00:00:00");
@@ -73,22 +68,18 @@ function scoreVendorCustomer(
   a: DocumentSummary,
   b: DocumentSummary,
 ): { score: number; isActive: boolean } {
-  // Check vendor
   if (a.vendorId && b.vendorId) {
     return { score: a.vendorId === b.vendorId ? 1.0 : 0.0, isActive: true };
   }
-  // Check customer
   if (a.customerId && b.customerId) {
     return {
       score: a.customerId === b.customerId ? 1.0 : 0.0,
       isActive: true,
     };
   }
-  // Both null -> no signal
   if (!a.vendorId && !b.vendorId && !a.customerId && !b.customerId) {
     return { score: 0.0, isActive: false };
   }
-  // One has vendor/customer, other doesn't -> mismatch
   return { score: 0.0, isActive: true };
 }
 
@@ -140,7 +131,6 @@ export function computePairScore(
 ): PairScoreResult {
   const matchedCriteria: string[] = [];
 
-  // Compute individual signals
   const amountScore = scoreAmount(docA.totalAmount, docB.totalAmount);
   const vcResult = scoreVendorCustomer(docA, docB);
   const glScore = docA.primaryGlAccount === docB.primaryGlAccount ? 1.0 : 0.0;
@@ -158,7 +148,6 @@ export function computePairScore(
   const ccResult = scoreNullableMatch(docA.costCenter, docB.costCenter);
   const taxResult = scoreNullableMatch(docA.taxCode, docB.taxCode);
 
-  // Build matched criteria descriptions
   if (amountScore > 0) {
     const diff = Math.abs(docA.totalAmount - docB.totalAmount);
     if (diff < 0.01) {
@@ -198,7 +187,6 @@ export function computePairScore(
     }
   }
 
-  // Calculate weighted score, adjusting for inactive signals
   let activeWeight = 1.0;
   if (!vcResult.isActive) activeWeight -= WEIGHTS.vendorCustomer;
   if (!ccResult.isActive) activeWeight -= WEIGHTS.costCenter;
@@ -215,7 +203,6 @@ export function computePairScore(
     (ccResult.isActive ? WEIGHTS.costCenter * ccResult.score : 0) +
     (taxResult.isActive ? WEIGHTS.taxCode * taxResult.score : 0);
 
-  // Normalize by active weight so inactive signals don't dilute the score
   const score = activeWeight > 0 ? rawScore / activeWeight : 0;
 
   return {
@@ -241,28 +228,20 @@ function summarizeDocument(lines: JournalEntryLine[]): DocumentSummary {
   const sorted = [...lines].sort((a, b) => a.line_id - b.line_id);
   const primary = sorted[0];
 
-  // Primary line: first debit line, or first line if no debit
   const firstDebit = sorted.find((l) => l.debit_credit === "S");
   const primaryLine = firstDebit ?? primary;
 
-  // Contra line: first line on opposite side from primary
   const contraLine = sorted.find(
     (l) => l.debit_credit !== primaryLine.debit_credit,
   );
 
-  // Total amount: sum of debit side
   const totalAmount = sorted
     .filter((l) => l.debit_credit === "S")
     .reduce((sum, l) => sum + l.amount, 0);
 
-  // Vendor/customer from any line in the document
   const vendorId = sorted.find((l) => l.vendor_id)?.vendor_id ?? null;
   const customerId = sorted.find((l) => l.customer_id)?.customer_id ?? null;
-
-  // Cost center from primary line
   const costCenter = primaryLine.cost_center;
-
-  // Tax code from primary line
   const taxCode = primaryLine.tax_code;
 
   return {
@@ -298,10 +277,12 @@ function severityFromScore(score: number): "critical" | "warning" | undefined {
  * Detect duplicate bookings by comparing all document pairs with
  * multi-signal weighted scoring.
  */
-export function detectDuplicateBookings(lines: JournalEntryLine[]): FlagMap {
+export function detectDuplicateBookings(
+  lines: JournalEntryLine[],
+  detectedAt: string = new Date().toISOString(),
+): FlagMap {
   const result: FlagMap = new Map();
 
-  // Group lines by document_id
   const documentLines = new Map<string, JournalEntryLine[]>();
   for (const line of lines) {
     const docLines = documentLines.get(line.document_id) ?? [];
@@ -309,34 +290,26 @@ export function detectDuplicateBookings(lines: JournalEntryLine[]): FlagMap {
     documentLines.set(line.document_id, docLines);
   }
 
-  // Build document summaries
   const documents: DocumentSummary[] = [];
   for (const [, docLines] of documentLines) {
     documents.push(summarizeDocument(docLines));
   }
 
-  // Compare all document pairs (O(n^2), fine for current dataset size)
   for (let i = 0; i < documents.length; i++) {
     for (let j = i + 1; j < documents.length; j++) {
       const docA = documents[i];
       const docB = documents[j];
 
-      // Gate: same document
       if (docA.documentId === docB.documentId) continue;
-
-      // Gate: invoice+payment pair
       if (isInvoicePaymentPair(docA, docB)) continue;
 
       const pairResult = computePairScore(docA, docB);
 
-      // Gate: amount match is required — same vendor + same account alone is
-      // normal business activity, not a duplicate
       if (pairResult.signals.amount === 0) continue;
 
       const severity = severityFromScore(pairResult.score);
       if (!severity) continue;
 
-      // Flag all lines in both documents
       const explanationAtoB = buildExplanation(
         docB.documentId,
         pairResult.matchedCriteria,
@@ -357,7 +330,7 @@ export function detectDuplicateBookings(lines: JournalEntryLine[]): FlagMap {
           severity,
           explanation: explanationAtoB,
           confidence: pairResult.score,
-          detectedAt: now,
+          detectedAt,
           relatedDocumentId: docB.documentId,
         });
         result.set(key, existing);
@@ -371,7 +344,7 @@ export function detectDuplicateBookings(lines: JournalEntryLine[]): FlagMap {
           severity,
           explanation: explanationBtoA,
           confidence: pairResult.score,
-          detectedAt: now,
+          detectedAt,
           relatedDocumentId: docA.documentId,
         });
         result.set(key, existing);
