@@ -20,7 +20,7 @@ export function FlagDistributionChart({ data }: FlagDistributionChartProps) {
       <h2 className="mb-4 text-sm font-semibold text-neutral-900">
         Flag Distribution by Type
       </h2>
-      <div className="h-[220px]">
+      <div className="h-[220px] [&_*]:!cursor-default">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
             data={data}
