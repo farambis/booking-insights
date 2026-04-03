@@ -10,7 +10,7 @@ const MIN_LINES_DOMINANT = 5;
 const MIN_CONCENTRATION_DOMINANT = 0.8;
 
 /** Minimum concentration for document type -> account range rules (debit side only) */
-const MIN_CONCENTRATION_DOC_TYPE = 0.6;
+const MIN_CONCENTRATION_DOC_TYPE = 0.7;
 
 /** Minimum distinct months for recurring text rules */
 const MIN_DISTINCT_MONTHS = 2;
@@ -356,19 +356,22 @@ export function mineAmountRangeRules(lines: JournalEntryLine[]): BookingRule[] {
 
     if (cv > MAX_CV_AMOUNT) continue;
 
-    const q1 = quantile(sorted, 0.25);
-    const q3 = quantile(sorted, 0.75);
+    // Use 10th-90th percentile for a meaningful range (~80% of values)
+    const p10 = quantile(sorted, 0.1);
+    const p90 = quantile(sorted, 0.9);
 
     const accountName = lookupAccountName(account);
     const nameLabel = accountName ? ` (${accountName})` : "";
 
-    // Count how many values fall within Q1-Q3
-    const inRange = amounts.filter((a) => a >= q1 && a <= q3).length;
+    const inRange = amounts.filter((a) => a >= p10 && a <= p90).length;
+
+    // Only emit if at least 70% of values fall within the range
+    if (inRange / amounts.length < 0.7) continue;
 
     rules.push({
       id: "",
-      title: `Account ${account}${nameLabel} typically has amounts between ${q1.toFixed(2)} and ${q3.toFixed(2)} EUR`,
-      description: `${inRange} of ${amounts.length} bookings (${Math.round((inRange / amounts.length) * 100)}%) on account ${account} fall within the interquartile range.`,
+      title: `Account ${account}${nameLabel} typically has amounts between ${p10.toFixed(2)} and ${p90.toFixed(2)} EUR`,
+      description: `${inRange} of ${amounts.length} bookings (${Math.round((inRange / amounts.length) * 100)}%) on account ${account} fall within this range.`,
       category: "amount_range",
       confidence: adjustedConfidence(inRange / amounts.length, amounts.length),
       supportCount: inRange,
@@ -376,7 +379,7 @@ export function mineAmountRangeRules(lines: JournalEntryLine[]): BookingRule[] {
       supportRatio: inRange / amounts.length,
       evidence: [],
       violationCount: amounts.length - inRange,
-      scope: { glAccount: account, amountMin: q1, amountMax: q3 },
+      scope: { glAccount: account, amountMin: p10, amountMax: p90 },
     });
   }
 
