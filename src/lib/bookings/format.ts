@@ -45,6 +45,23 @@ export function flagTypeLabel(type: FlagType): string {
   return FLAG_TYPE_LABELS[type];
 }
 
+const FLAG_TYPE_SHORT_LABELS: Record<FlagType, string> = {
+  duplicate_entry: "Duplicate",
+  duplicate_booking: "Duplicate",
+  missing_counterpart: "Missing",
+  unusual_amount: "Amount",
+  pattern_break: "Pattern",
+  round_number_anomaly: "Round Nr.",
+  text_typo: "Typo",
+  unusual_text_account: "Unusual",
+  text_duplicate_posting: "Duplicate",
+};
+
+/** Short label for use in table columns */
+export function flagTypeShortLabel(type: FlagType): string {
+  return FLAG_TYPE_SHORT_LABELS[type];
+}
+
 /** Map confidence score to display label */
 export function confidenceLabel(score: number): "High" | "Medium" | "Low" {
   if (score >= 0.7) return "High";
