@@ -20,13 +20,12 @@ export function FlagDistributionChart({ data }: FlagDistributionChartProps) {
       <h2 className="mb-4 text-sm font-semibold text-neutral-900">
         Flag Distribution by Type
       </h2>
-      <div className="h-[220px] [&_*]:!cursor-default">
+      <div className="h-[220px]">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
             data={data}
             layout="vertical"
             margin={{ left: 0, right: 20, top: 0, bottom: 0 }}
-            style={{ cursor: "default" }}
           >
             <XAxis type="number" hide />
             <YAxis
@@ -50,9 +49,16 @@ export function FlagDistributionChart({ data }: FlagDistributionChartProps) {
               radius={[0, 4, 4, 0]}
               barSize={20}
               activeBar={false}
+              isAnimationActive={false}
+              style={{ outline: "none", cursor: "default" }}
             >
               {data.map((entry) => (
-                <Cell key={entry.type} fill="#006fd6" />
+                <Cell
+                  key={entry.type}
+                  fill="#006fd6"
+                  style={{ outline: "none" }}
+                  tabIndex={-1}
+                />
               ))}
             </Bar>
           </BarChart>
