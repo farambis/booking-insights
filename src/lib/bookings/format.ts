@@ -34,6 +34,9 @@ const FLAG_TYPE_LABELS: Record<FlagType, string> = {
   unusual_amount: "Unusual Amount",
   pattern_break: "Pattern Break",
   round_number_anomaly: "Round Number Anomaly",
+  text_typo: "Text Typo",
+  unusual_text_account: "Unusual Text-Account Combo",
+  text_duplicate_posting: "Text Duplicate Posting",
 };
 
 /** Map FlagType to human-readable label */
