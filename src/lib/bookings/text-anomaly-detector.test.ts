@@ -197,31 +197,31 @@ describe("detectUnusualTextAccountCombos", () => {
     expect(result.size).toBe(0);
   });
 
-  it("flags when account holds < 10% of the text total", () => {
-    // Need at least 11 lines so that 1 is < 10%
+  it("flags when text has dominant account and a rare outlier", () => {
+    // 20 lines on dominant account + 1 outlier = 1/21 = 4.8% < 5%
+    // Dominant account at 20/21 = 95% >= 50% threshold
     const lines: JournalEntryLine[] = [];
-    for (let i = 1; i <= 10; i++) {
+    for (let i = 1; i <= 20; i++) {
       lines.push(
         makeLine({
           document_id: `D${i}`,
           line_id: 1,
-          booking_text: "Lieferant Mueller",
-          gl_account: "400000",
+          booking_text: "Miete Buero",
+          gl_account: "070000",
         }),
       );
     }
-    // 1 unusual line: 1/11 = 9.09% < 10%
     lines.push(
       makeLine({
-        document_id: "D11",
+        document_id: "D21",
         line_id: 1,
-        booking_text: "Lieferant Mueller",
+        booking_text: "Miete Buero",
         gl_account: "060000",
       }),
     );
 
     const result = detectUnusualTextAccountCombos(lines);
-    const flags = result.get("D11:1");
+    const flags = result.get("D21:1");
     expect(flags).toBeDefined();
     expect(flags!.length).toBe(1);
     expect(flags![0].type).toBe("unusual_text_account");
