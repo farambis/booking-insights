@@ -10,6 +10,12 @@ import type { BookingManual, BookingRule } from "./rule.types";
 
 export interface BookingService {
   getDashboardSummary(): Promise<DashboardSummary>;
+  getCounts(): Promise<{
+    totalDocuments: number;
+    criticalCount: number;
+    warningCount: number;
+    cleanCount: number;
+  }>;
   getBookings(
     filters: BookingFilters,
   ): Promise<PaginatedResult<BookingListItem>>;

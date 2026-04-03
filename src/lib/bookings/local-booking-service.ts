@@ -14,6 +14,7 @@ import type { BookingService } from "./booking-service";
 import {
   queryBookings,
   buildDashboardSummary,
+  buildCounts,
   findRelated,
 } from "./booking-queries";
 import { detectTextAnomalies } from "./text-anomaly-detector";
@@ -169,6 +170,9 @@ const bookingManual: BookingManual = mineBookingRules(
 export const localBookingService: BookingService = {
   async getDashboardSummary() {
     return buildDashboardSummary(allBookings);
+  },
+  async getCounts() {
+    return buildCounts(allBookings);
   },
   async getBookings(filters) {
     return queryBookings(allBookings, filters);
