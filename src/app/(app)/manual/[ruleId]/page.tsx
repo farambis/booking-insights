@@ -44,7 +44,7 @@ function sortViolations(
         cmp = a.glAccount.localeCompare(b.glAccount);
         break;
       case "amount":
-        cmp = a.amount - b.amount;
+        cmp = Math.abs(a.amount) - Math.abs(b.amount);
         break;
       case "status":
         cmp = (STATUS_ORDER[a.status] ?? 9) - (STATUS_ORDER[b.status] ?? 9);
