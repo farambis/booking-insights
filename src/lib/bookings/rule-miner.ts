@@ -398,9 +398,7 @@ export function mineBookingRules(lines: JournalEntryLine[]): BookingManual {
   const filtered = allRules.filter((r) => r.confidence >= MIN_CONFIDENCE);
 
   // Sort by confidence (already adjusted for sample size) descending
-  filtered.sort(
-    (a, b) => b.confidence - a.confidence,
-  );
+  filtered.sort((a, b) => b.confidence - a.confidence);
 
   // Take top N
   const top = filtered.slice(0, MAX_RULES);
