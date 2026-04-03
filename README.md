@@ -52,25 +52,38 @@ journal-entries.json
 - `missing_counterpart` — Document without counterpart entry
 - `rule_violation` — Violation of a derived booking rule
 
+Each PR was reviewed by code-reviewer, UX-designer, and software-architect agents. All review comments are available directly on the PRs.
+
 ### PR [#1](https://github.com/farambis/booking-insights/pull/1) — Text-Based Anomaly Detection
 
 Three detectors for booking text anomalies: typos via Levenshtein distance, unusual text-account combinations via frequency analysis, and text-based duplicate detection via document signatures.
 
-**Key finding:** 99.8% false positive rate in the typo detector caused by date-suffixed booking texts ("Ausgangsrechnung 2025-01-15" vs "2025-01-16"). Resolved by normalizing texts: date suffixes are stripped before comparison.
+**Key finding:** 99.8% false positive rate in the typo detector caused by date-suffixed booking texts ("Ausgangsrechnung 2025-01-15" vs "2025-01-16").
+
+Follow-up fixes:
+- [`9fb8b9a`](https://github.com/farambis/booking-insights/commit/9fb8b9a) — Add new text flag types to `VALID_FLAG_TYPES` whitelist (filter dropdown was silently ignoring them)
+- [`cd5fc78`](https://github.com/farambis/booking-insights/commit/cd5fc78) — Normalize booking texts before comparison, stripping date suffixes. Eliminated all 1,221 false positives while preserving 2 genuine typo detections
 
 ### PR [#3](https://github.com/farambis/booking-insights/pull/3) — Multi-Signal Duplicate Booking Detection
 
 Replaces basic text-signature duplicate detection with weighted scoring across 9 signals (amount, vendor/customer, GL account, contra account, posting date, booking text, document type, cost center, tax code).
 
-**Key decision:** Amount match (≤0.50 EUR difference) is a required gate. Same vendor + same account without matching amount is normal business activity, not a duplicate. Confidence is shown as a percentage (not High/Medium/Low), and related documents are inlined in the flag card.
+**Key decision:** Amount match (≤0.50 EUR difference) is a required gate. Same vendor + same account without matching amount is normal business activity, not a duplicate.
+
+Follow-up fixes:
+- [`b36a710`](https://github.com/farambis/booking-insights/commit/b36a710) — Show confidence as percentage instead of High/Medium/Low tiers (review found that 0.76 and 0.99 looked identical)
+- [`e1c64b3`](https://github.com/farambis/booking-insights/commit/e1c64b3) — Inline related document info in flag card (review found accountants had to click through to see the other document)
 
 ### PR [#2](https://github.com/farambis/booking-insights/pull/2) — Booking Manual / Rule Mining
 
-Derives booking rules from transaction data to serve as a data-driven "booking manual." Five miners extract patterns: account+tax code rules, account+cost center rules, document type+account range rules, recurring text patterns, and amount range rules. Each rule has a confidence score adjusted for sample size. The top 10 rules are displayed on a dedicated `/manual` page.
+Derives booking rules from transaction data to serve as a data-driven "booking manual." Five miners extract patterns: account+tax code rules, account+cost center rules, document type+account range rules, recurring text patterns, and amount range rules. Rules are separate from flags — they describe "how things should be" (prescriptive), while flags describe "what looks wrong" (diagnostic). `rule_violation` flags are emitted when bookings deviate from the derived rules.
 
-Rules are separate from flags — they describe "how things should be" (prescriptive), while flags describe "what looks wrong" (diagnostic). However, `rule_violation` flags are emitted when bookings deviate from the derived rules.
+**Key finding:** Initial confidence ranking was effectively `confidence²` because `confidence` and `supportRatio` were identical.
 
-**Key finding:** Initial confidence ranking was effectively `confidence²` because `confidence` and `supportRatio` were identical. Fixed by introducing `adjustedConfidence()` that penalizes small samples using `concentration * sqrt(sampleSize / 30)`.
+Follow-up fixes:
+- [`f4b319a`](https://github.com/farambis/booking-insights/commit/f4b319a) — Add font-mono to evidence document IDs for scannability
+- [`97d3b51`](https://github.com/farambis/booking-insights/commit/97d3b51) — Separate confidence from supportRatio; introduce `adjustedConfidence()` that penalizes small samples
+- [`100a09a`](https://github.com/farambis/booking-insights/commit/100a09a) — Fix violation link to use available filters per rule scope instead of hardcoded `flagTypes=pattern_break`
 
 ## Exercise 3: Context Engineering
 
