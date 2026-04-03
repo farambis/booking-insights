@@ -125,7 +125,11 @@ export function mineAccountTaxCodeRules(
         `Tax code: ${dominantCode}`,
       ),
       violationCount,
-      scope: { glAccount: account, taxCode: dominantCode },
+      scope: {
+        category: "account_tax_code",
+        glAccount: account,
+        taxCode: dominantCode,
+      },
     });
   }
 
@@ -184,7 +188,11 @@ export function mineAccountCostCenterRules(
         `Cost center: ${dominantCC}`,
       ),
       violationCount,
-      scope: { glAccount: account, costCenter: dominantCC },
+      scope: {
+        category: "account_cost_center",
+        glAccount: account,
+        costCenter: dominantCC,
+      },
     });
   }
 
@@ -250,7 +258,11 @@ export function mineDocumentTypeAccountRules(
         `Account range: ${dominantRange}`,
       ),
       violationCount: classifiedCount - dominantCount,
-      scope: { documentType: docType, accountRange: dominantRange },
+      scope: {
+        category: "document_type_account",
+        documentType: docType,
+        accountRange: dominantRange,
+      },
     });
   }
 
@@ -317,7 +329,11 @@ export function mineRecurringTextRules(
         `Recurring: ${normalizedText}`,
       ),
       violationCount: textLines.length - dominantCount,
-      scope: { textPattern: normalizedText, glAccount: dominantAccount },
+      scope: {
+        category: "recurring_text",
+        textPattern: normalizedText,
+        glAccount: dominantAccount,
+      },
     });
   }
 
@@ -379,7 +395,12 @@ export function mineAmountRangeRules(lines: JournalEntryLine[]): BookingRule[] {
       supportRatio: inRange / amounts.length,
       evidence: [],
       violationCount: amounts.length - inRange,
-      scope: { glAccount: account, amountMin: p10, amountMax: p90 },
+      scope: {
+        category: "amount_range",
+        glAccount: account,
+        amountMin: p10,
+        amountMax: p90,
+      },
     });
   }
 
@@ -388,12 +409,25 @@ export function mineAmountRangeRules(lines: JournalEntryLine[]): BookingRule[] {
 
 function buildStableId(rule: BookingRule): string {
   const parts: string[] = [rule.category];
+  const scope = rule.scope;
 
-  if (rule.scope.glAccount) parts.push(rule.scope.glAccount);
-  if (rule.scope.taxCode) parts.push(rule.scope.taxCode);
-  if (rule.scope.costCenter) parts.push(rule.scope.costCenter);
-  if (rule.scope.documentType) parts.push(rule.scope.documentType);
-  if (rule.scope.textPattern) parts.push(rule.scope.textPattern);
+  switch (scope.category) {
+    case "account_tax_code":
+      parts.push(scope.glAccount, scope.taxCode);
+      break;
+    case "account_cost_center":
+      parts.push(scope.glAccount, scope.costCenter);
+      break;
+    case "document_type_account":
+      parts.push(scope.documentType);
+      break;
+    case "recurring_text":
+      parts.push(scope.textPattern, scope.glAccount);
+      break;
+    case "amount_range":
+      parts.push(scope.glAccount);
+      break;
+  }
 
   return parts.join(":");
 }

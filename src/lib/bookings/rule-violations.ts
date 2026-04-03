@@ -24,7 +24,7 @@ export function findRuleViolations(
 ): BookingListItem[] {
   const violatingDocIds = new Set<string>();
 
-  switch (rule.category) {
+  switch (rule.scope.category) {
     case "account_tax_code": {
       const { glAccount, taxCode } = rule.scope;
       for (const line of lines) {

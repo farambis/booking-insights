@@ -68,6 +68,9 @@ describe("mineAccountTaxCodeRules", () => {
     expect(rules[0].confidence).toBeLessThan(rules[0].supportRatio);
     expect(rules[0].evidence.length).toBeLessThanOrEqual(3);
     expect(rules[0].violationCount).toBe(1);
+    expect(rules[0].scope.category).toBe("account_tax_code");
+    if (rules[0].scope.category !== "account_tax_code")
+      throw new Error("unexpected");
     expect(rules[0].scope.glAccount).toBe("070000");
     expect(rules[0].scope.taxCode).toBe("V19");
   });
@@ -173,6 +176,9 @@ describe("mineAccountCostCenterRules", () => {
     expect(rules[0].title).toContain("060000");
     expect(rules[0].title).toContain("1000");
     expect(rules[0].violationCount).toBe(1);
+    expect(rules[0].scope.category).toBe("account_cost_center");
+    if (rules[0].scope.category !== "account_cost_center")
+      throw new Error("unexpected");
     expect(rules[0].scope.glAccount).toBe("060000");
     expect(rules[0].scope.costCenter).toBe("1000");
   });
@@ -227,6 +233,9 @@ describe("mineDocumentTypeAccountRules", () => {
     expect(rules[0].category).toBe("document_type_account");
     expect(rules[0].title).toContain("KR");
     expect(rules[0].title).toContain("Operating expenses");
+    expect(rules[0].scope.category).toBe("document_type_account");
+    if (rules[0].scope.category !== "document_type_account")
+      throw new Error("unexpected");
     expect(rules[0].scope.documentType).toBe("KR");
     expect(rules[0].scope.accountRange).toBe("Operating expenses");
   });
@@ -280,6 +289,9 @@ describe("mineRecurringTextRules", () => {
     expect(rules[0].category).toBe("recurring_text");
     expect(rules[0].title).toContain("Miete Hauptgebäude");
     expect(rules[0].title).toContain("070000");
+    expect(rules[0].scope.category).toBe("recurring_text");
+    if (rules[0].scope.category !== "recurring_text")
+      throw new Error("unexpected");
     expect(rules[0].scope.textPattern).toBe("Miete Hauptgebäude");
     expect(rules[0].scope.glAccount).toBe("070000");
   });
@@ -349,10 +361,13 @@ describe("mineAmountRangeRules", () => {
     expect(rules.length).toBe(1);
     expect(rules[0].category).toBe("amount_range");
     expect(rules[0].title).toContain("070000");
+    expect(rules[0].scope.category).toBe("amount_range");
+    if (rules[0].scope.category !== "amount_range")
+      throw new Error("unexpected");
     expect(rules[0].scope.glAccount).toBe("070000");
     expect(rules[0].scope.amountMin).toBeDefined();
     expect(rules[0].scope.amountMax).toBeDefined();
-    expect(rules[0].scope.amountMin!).toBeLessThan(rules[0].scope.amountMax!);
+    expect(rules[0].scope.amountMin).toBeLessThan(rules[0].scope.amountMax);
   });
 
   it("skips accounts with high coefficient of variation (>1.5)", () => {

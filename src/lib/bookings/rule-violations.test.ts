@@ -59,7 +59,11 @@ function makeRule(overrides: Partial<BookingRule>): BookingRule {
     supportRatio: 0.9,
     evidence: [],
     violationCount: 1,
-    scope: { glAccount: "070000", taxCode: "V19" },
+    scope: {
+      category: "account_tax_code",
+      glAccount: "070000",
+      taxCode: "V19",
+    },
     ...overrides,
   };
 }
@@ -70,7 +74,11 @@ describe("findRuleViolations", () => {
       const rule = makeRule({
         id: "account_tax_code:070000:V19",
         category: "account_tax_code",
-        scope: { glAccount: "070000", taxCode: "V19" },
+        scope: {
+          category: "account_tax_code",
+          glAccount: "070000",
+          taxCode: "V19",
+        },
       });
 
       const lines: JournalEntryLine[] = [
@@ -108,7 +116,11 @@ describe("findRuleViolations", () => {
     it("flags lines where tax_code is null as violations", () => {
       const rule = makeRule({
         category: "account_tax_code",
-        scope: { glAccount: "070000", taxCode: "V19" },
+        scope: {
+          category: "account_tax_code",
+          glAccount: "070000",
+          taxCode: "V19",
+        },
       });
 
       const lines: JournalEntryLine[] = [
@@ -139,7 +151,11 @@ describe("findRuleViolations", () => {
     it("returns empty array when all lines conform", () => {
       const rule = makeRule({
         category: "account_tax_code",
-        scope: { glAccount: "070000", taxCode: "V19" },
+        scope: {
+          category: "account_tax_code",
+          glAccount: "070000",
+          taxCode: "V19",
+        },
       });
 
       const lines: JournalEntryLine[] = [
@@ -165,7 +181,11 @@ describe("findRuleViolations", () => {
       const rule = makeRule({
         id: "account_cost_center:060000:1000",
         category: "account_cost_center",
-        scope: { glAccount: "060000", costCenter: "1000" },
+        scope: {
+          category: "account_cost_center",
+          glAccount: "060000",
+          costCenter: "1000",
+        },
       });
 
       const lines: JournalEntryLine[] = [
@@ -207,7 +227,11 @@ describe("findRuleViolations", () => {
       const rule = makeRule({
         id: "document_type_account:KR",
         category: "document_type_account",
-        scope: { documentType: "KR", accountRange: "Operating expenses" },
+        scope: {
+          category: "document_type_account",
+          documentType: "KR",
+          accountRange: "Operating expenses",
+        },
       });
 
       // D1: KR with debit on 070000 (Operating expenses) - need to know dominant range
@@ -269,7 +293,11 @@ describe("findRuleViolations", () => {
       const rule = makeRule({
         id: "recurring_text:Miete:070000",
         category: "recurring_text",
-        scope: { textPattern: "Miete", glAccount: "070000" },
+        scope: {
+          category: "recurring_text",
+          textPattern: "Miete",
+          glAccount: "070000",
+        },
       });
 
       const lines: JournalEntryLine[] = [
@@ -310,7 +338,12 @@ describe("findRuleViolations", () => {
       const rule = makeRule({
         id: "amount_range:070000",
         category: "amount_range",
-        scope: { glAccount: "070000", amountMin: 90, amountMax: 110 },
+        scope: {
+          category: "amount_range",
+          glAccount: "070000",
+          amountMin: 90,
+          amountMax: 110,
+        },
       });
 
       const lines: JournalEntryLine[] = [
