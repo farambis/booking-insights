@@ -63,7 +63,9 @@ describe("mineAccountTaxCodeRules", () => {
     expect(rules[0].category).toBe("account_tax_code");
     expect(rules[0].title).toContain("070000");
     expect(rules[0].title).toContain("V19");
-    expect(rules[0].confidence).toBeGreaterThanOrEqual(0.8);
+    // Confidence is adjusted for sample size (5 lines), so lower than raw 80%
+    expect(rules[0].confidence).toBeGreaterThan(0);
+    expect(rules[0].confidence).toBeLessThan(rules[0].supportRatio);
     expect(rules[0].evidence.length).toBeLessThanOrEqual(3);
     expect(rules[0].violationCount).toBe(1);
     expect(rules[0].scope.glAccount).toBe("070000");
@@ -387,10 +389,9 @@ describe("mineAmountRangeRules", () => {
 });
 
 describe("mineBookingRules (orchestrator)", () => {
-  it("filters out rules below confidence 0.6", () => {
-    // Create data that would produce a rule just below 0.6 confidence
-    // Hard to force exact confidence, so we just test the filter logic
-    // by verifying all returned rules have confidence >= 0.6
+  it("filters out rules below minimum confidence", () => {
+    // Confidence is adjusted for sample size, threshold is 0.4
+    // Verify all returned rules meet the minimum
     const lines: JournalEntryLine[] = [];
     for (let i = 0; i < 10; i++) {
       lines.push(
@@ -410,7 +411,7 @@ describe("mineBookingRules (orchestrator)", () => {
     const manual = mineBookingRules(lines);
 
     for (const rule of manual.rules) {
-      expect(rule.confidence).toBeGreaterThanOrEqual(0.6);
+      expect(rule.confidence).toBeGreaterThanOrEqual(0.4);
     }
   });
 
