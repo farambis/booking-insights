@@ -12,7 +12,26 @@
       "Bash(npm run:*)",
       "Bash(git:*)",
       "Bash(LEFTHOOK=0 git commit -m \"Initial commit\")",
-      "Bash(LEFTHOOK=0 git commit -m \"Add Prettier with Tailwind plugin and pre-commit formatting\")"
+      "Bash(LEFTHOOK=0 git commit -m \"Add Prettier with Tailwind plugin and pre-commit formatting\")",
+      "Bash(LEFTHOOK=0 git commit -m \"Add error boundary and not-found pages\")",
+      "Bash(node:*)",
+      "Bash(LEFTHOOK=0 git commit -m \"Add environment variable validation with t3-env and Zod\")",
+      "Bash(npx tsx:*)",
+      "Bash(npx prettier:*)",
+      "Bash(LEFTHOOK=0 git add CLAUDE.md README.md docs/design/booking-insights-ux.md package-lock.json package.json src/components/shell/topbar.tsx)",
+      "Bash(LEFTHOOK=0 git commit -m \"Rename Northscope to Booking Insights\")",
+      "Bash(LEFTHOOK=0 git add src/lib/bookings/booking.types.ts src/lib/bookings/booking-queries.ts src/lib/bookings/filter-params.ts src/components/pagination.tsx src/app/\\\\\\(app\\\\\\)/bookings/page.tsx src/components/pagination.test.tsx src/components/filter-bar/filter-bar.test.tsx src/lib/bookings/booking-queries.test.ts src/lib/bookings/filter-params.test.ts)",
+      "Bash(LEFTHOOK=0 git commit -m \"Add configurable page size to bookings pagination\")",
+      "Bash(LEFTHOOK=0 git add src/app/not-found.tsx src/app/error.tsx src/app/global-error.tsx)",
+      "Bash(LEFTHOOK=0 git commit -m \"Improve error pages with better UX and messaging\")",
+      "Bash(LEFTHOOK=0 git push:*)",
+      "Bash(LEFTHOOK=0 git add src/lib/bookings/filter-params.ts)",
+      "Bash(LEFTHOOK=0 git commit --amend --no-edit)",
+      "Bash(LEFTHOOK=0 git checkout main)",
+      "Bash(LEFTHOOK=0 git merge --ff-only feature/text-anomaly-detection)",
+      "Bash(LEFTHOOK=0 git reset:*)",
+      "Bash(LEFTHOOK=0 git add -A)",
+      "Bash(LEFTHOOK=0 git commit -m \"Add text-based anomaly detection for journal entry bookings\")"
     ]
   }
 }
