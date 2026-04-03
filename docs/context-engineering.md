@@ -1,214 +1,210 @@
 # Context Engineering — Architecture Sketch
 
-**Ziel:** Wenn ein Flag feuert oder ein KPI angezeigt wird, soll der User "Warum?" fragen können und eine nachvollziehbare, quellenbelegte Antwort bekommen — nicht nur eine Zahl.
+**Goal:** When a flag fires or a KPI is displayed, the user should be able to ask "Why?" and get a traceable, source-backed answer — not just a number.
 
 ---
 
-## 1. Kontextquellen
+## 1. Context Sources
 
-### Tier 1 — Statisch, sofort integrierbar (kein externes System nötig)
+### Tier 1 — Static, immediately integrable (no external system required)
 
-**Kontenrahmen / Data Dictionary**
+**Chart of Accounts / Data Dictionary**
 
-- Was es liefert: GL-Konto-Definitionen, Steuercode-Bedeutungen, Belegarten-Semantik, Kostenstellen-Beschreibungen
-- Existiert bereits teilweise in `account-master.ts` (27 Konten, 5 Kostenstellen, 6 Belegarten)
-- Erweiterung: Jedes Konto bekommt ein `description`-Feld mit Erklärung wofür es verwendet wird, typische Betragsranges, und erwartete Gegenkonten
-- Ingestion: Statisches JSON/TypeScript, versioniert im Repo
-- Beispiel-Antwort: "Konto 070500 (Reisekosten) wird für Dienstreisen und damit verbundene Auslagen verwendet. Typischer Bereich: 50–5.000 EUR. Übliches Gegenkonto: 090000 (Bank)."
+- Provides: GL account definitions, tax code meanings, document type semantics, cost center descriptions
+- Already partially exists in `account-master.ts` (27 accounts, 5 cost centers, 6 document types)
+- Extension: Each account gets a `description` field explaining its purpose, typical amount ranges, and expected contra accounts
+- Ingestion: Static JSON/TypeScript, version-controlled in the repo
+- Example answer: "Account 070500 (Travel Expenses) is used for business travel and related expenses. Typical range: 50–5,000 EUR. Common contra account: 090000 (Bank)."
 
-**Buchungsrichtlinien & SOPs (Standard Operating Procedures)**
+**Booking Policies & SOPs (Standard Operating Procedures)**
 
-- Was es liefert: Schwellenwerte ("Freigabe ab 5.000 EUR nötig"), Prozessregeln ("Reisekosten müssen vom Kostenstellenleiter genehmigt werden"), Rabattrichtlinien
-- Format: Markdown-Dokumente im Repo (z.B. `docs/policies/`)
-- Ingestion: Bei Deploy chunken und embedden. Jedes Chunk bekommt einen Versions-Stempel
-- Beispiel-Antwort: "Laut Reisekostenrichtlinie §3.2 sind Einzelbelege über 500 EUR gesondert zu genehmigen. [Quelle: reisekosten-richtlinie.md, v2.1, gültig seit 01.01.2025]"
+- Provides: Thresholds ("approval required above 5,000 EUR"), process rules ("travel expenses must be approved by cost center manager"), discount policies
+- Format: Markdown documents in the repo (e.g., `docs/policies/`)
+- Ingestion: Chunk and embed at deploy time. Each chunk gets a version stamp
+- Example answer: "Per travel expense policy §3.2, individual receipts above 500 EUR require separate approval. [Source: travel-expense-policy.md, v2.1, effective 01.01.2025]"
 
-### Tier 2 — On-Demand, erfordert API-Anbindung
+### Tier 2 — On-demand, requires API integration
 
-**Freigabe-Workflows / Approval History**
+**Approval Workflows / Approval History**
 
-- Was es liefert: Wer hat den Beleg freigegeben, wann, unter welcher Vertretungsregelung
-- Quelle: SAP BAPI/oData oder internes Workflow-System
-- Ingestion: Pro Beleg on-demand abrufen wenn der User die Detail-Ansicht öffnet, 24h gecacht
-- Beispiel-Antwort: "Beleg 5000000142 wurde am 15.02.2025 von M. Schmidt freigegeben (Vertretung für F. Weber, Urlaubsregelung)."
+- Provides: Who approved the document, when, under which delegation rule
+- Source: SAP BAPI/oData or internal workflow system
+- Ingestion: Fetched per document on-demand when the user opens the detail view, cached for 24h
+- Example answer: "Document 5000000142 was approved on 15.02.2025 by M. Schmidt (substituting for F. Weber, vacation rule)."
 
-**CRM-Notizen**
+**CRM Notes**
 
-- Was es liefert: Geschäftskontext zu Kunden/Lieferanten ("Müller GmbH hat in Q3 die Bankverbindung gewechselt", "Sonderrabatt vereinbart für Erstbestellung")
-- Quelle: CRM API (Salesforce, HubSpot, o.ä.)
-- Ingestion: On-demand per `vendor_id` / `customer_id` wenn ein Flag mit Vendor/Customer-Bezug inspiziert wird
-- Beispiel-Antwort: "CRM-Notiz zu V0003 (Müller GmbH): '10% Sonderrabatt vereinbart für Bestellungen über 10.000 EUR, gültig bis 31.03.2025.' [Erstellt von T. Bauer, 12.01.2025]"
+- Provides: Business context for customers/vendors ("Mueller GmbH switched bank accounts in Q3", "special discount agreed for first order")
+- Source: CRM API (Salesforce, HubSpot, etc.)
+- Ingestion: On-demand per `vendor_id` / `customer_id` when a flag with vendor/customer reference is inspected
+- Example answer: "CRM note for V0003 (Mueller GmbH): '10% special discount agreed for orders above 10,000 EUR, valid until 31.03.2025.' [Created by T. Bauer, 12.01.2025]"
 
-### Tier 3 — Async, höchste Integrationskosten
+### Tier 3 — Async, highest integration cost
 
-**E-Mail / Korrespondenz**
+**Email / Correspondence**
 
-- Was es liefert: Rechnungsdispute, Korrekturanfragen, informelle Absprachen
-- Quelle: Exchange/Graph API, gematcht über Belegnummer oder Vendor-ID im Betreff/Body
-- Ingestion: Async-Index, nicht real-time. Periodischer Crawl (z.B. täglich) mit Matching-Heuristik
-- Risiko: Datenschutz (E-Mail-Inhalte sind sensibel), erfordert klare Zugriffsregeln
-- Beispiel-Antwort: "E-Mail von mueller@muellerGmbH.de am 14.02.2025: 'Bitte korrigieren Sie die Rechnung 2025-412, der Betrag sollte 1.404,17 EUR statt 1.500,00 EUR sein.'"
+- Provides: Invoice disputes, correction requests, informal agreements
+- Source: Exchange/Graph API, matched by document number or vendor ID in subject/body
+- Ingestion: Async index, not real-time. Periodic crawl (e.g., daily) with matching heuristics
+- Risk: Data privacy (email contents are sensitive), requires clear access rules
+- Example answer: "Email from mueller@muellerGmbH.de on 14.02.2025: 'Please correct invoice 2025-412, the amount should be 1,404.17 EUR instead of 1,500.00 EUR.'"
 
-**Priorisierung:** Mit Tier 1 starten (null Integrationsrisiko, sofortiger Mehrwert). Tier 2 hinzufügen wenn die UI steht. Tier 3 nur wenn expliziter Bedarf besteht.
+**Prioritization:** Start with Tier 1 (zero integration risk, immediate value). Add Tier 2 when the UI is validated. Tier 3 only if explicit demand exists.
 
 ---
 
-## 2. Entity/Relation-Modell
+## 2. Entity/Relation Model
 
 ```
-JournalEntryLine (existiert)
+JournalEntryLine (existing)
   |
   |-- documentId, glAccount, vendorId, customerId, costCenter, taxCode
   |
-  +---> BookingFlag (existiert)
+  +---> BookingFlag (existing)
   |       |-- type, severity, explanation, confidence
   |       |
-  |       +---> ContextEvidence[] (NEU, lazy-loaded)
+  |       +---> ContextEvidence[] (NEW, lazy-loaded)
   |               |-- sourceType: "dictionary" | "policy" | "approval" | "crm" | "email"
-  |               |-- sourceRef: string         // URI oder Dateipfad zum Quelldokument
-  |               |-- excerpt: string           // Der relevante Textauszug
-  |               |-- relevanceScore: number    // 0-1, wie gut passt die Evidenz zum Flag
-  |               |-- retrievedAt: string       // ISO-Datum, wann abgerufen
+  |               |-- sourceRef: string         // URI or file path to source document
+  |               |-- excerpt: string           // The relevant text excerpt
+  |               |-- relevanceScore: number    // 0-1, how well the evidence matches the flag
+  |               |-- retrievedAt: string       // ISO date, when retrieved
   |
-  +---> KpiDefinition (NEU, statisches Registry für Dashboard)
-          |-- kpiId: string                     // z.B. "total_documents", "critical_count"
-          |-- label: string                     // "Kritische Flags"
-          |-- formula: string                   // Menschenlesbare Berechnungsformel
-          |-- owner: string                     // Team oder Rolle die den KPI verantwortet
-          |-- derivedFrom: string[]             // Welche GL-Konten / Flag-Typen einfließen
-          |-- policyRef: string | null          // Link zur Richtlinie die diesen KPI definiert
-          |-- description: string               // Warum dieser KPI existiert und was er aussagt
+  +---> KpiDefinition (NEW, static registry for dashboard)
+          |-- kpiId: string                     // e.g., "total_documents", "critical_count"
+          |-- label: string                     // "Critical Flags"
+          |-- formula: string                   // Human-readable calculation formula
+          |-- owner: string                     // Team or role responsible
+          |-- derivedFrom: string[]             // Which GL accounts / flag types feed into it
+          |-- policyRef: string | null          // Link to governing policy
+          |-- description: string               // Why this KPI exists and what it measures
 ```
 
-### Schlüssel-Beziehungen
+### Key Relationships
 
-- **BookingFlag → ContextEvidence[]**: Jedes Flag kann 0-N Evidenz-Einträge haben. Evidenz wird **lazy** geladen (erst wenn der User die Detail-Ansicht öffnet), nicht während des Batch-Flaggings. Das hält die Startup-Zeit kurz.
-- **KpiDefinition → GL-Konten / Flag-Typen**: Das Dashboard liest das KPI-Registry um "Warum wird dieser KPI so berechnet?" Tooltips zu rendern. Rein statisch, kein API-Call.
-- **ContextEvidence → Quelldokument**: Jede Evidenz verlinkt auf das Originaldokument (Richtlinie, CRM-Notiz, E-Mail). Der User kann immer zur Primärquelle navigieren.
+- **BookingFlag → ContextEvidence[]**: Each flag can have 0-N evidence entries. Evidence is loaded **lazily** (only when the user opens the detail view), not during batch flagging. This keeps startup time short.
+- **KpiDefinition → GL accounts / flag types**: The dashboard reads the KPI registry to render "Why is this KPI calculated this way?" tooltips. Purely static, no API call.
+- **ContextEvidence → Source document**: Each evidence entry links to the original document (policy, CRM note, email). The user can always navigate to the primary source.
 
-### Wie Buchungen zum Geschäftskontext verlinkt werden
+### How Bookings Link to Business Context
 
 ```
-Buchung (5000000142)
+Booking (5000000142)
   |
-  |-- glAccount: "070000" ──→ Dictionary: "Miete — monatliche Büromiete"
-  |-- vendorId: "V0003"  ──→ CRM: "Müller GmbH, Sonderrabatt vereinbart"
-  |-- costCenter: "3000"  ──→ Dictionary: "Production — Kostenstellenleiter: M. Schmidt"
-  |-- taxCode: "V19"      ──→ Dictionary: "Vorsteuer 19%, Standard-USt"
+  |-- glAccount: "070000" --> Dictionary: "Rent — monthly office rent"
+  |-- vendorId: "V0003"  --> CRM: "Mueller GmbH, special discount agreed"
+  |-- costCenter: "3000"  --> Dictionary: "Production — cost center manager: M. Schmidt"
+  |-- taxCode: "V19"      --> Dictionary: "Input VAT 19%, standard rate"
   |
   +-- Flag: duplicate_booking (87%)
         |
-        +-- Evidence[0]: Dictionary "Konto 070000 wird für Miete verwendet, monatlich gleicher Betrag erwartet"
-        +-- Evidence[1]: Policy "§2.1: Doppelbuchungen müssen innerhalb von 5 Werktagen storniert werden"
-        +-- Evidence[2]: CRM "Mietvertrag V0003: 1.404,17 EUR/Monat seit 01.01.2025"
+        +-- Evidence[0]: Dictionary "Account 070000 is used for rent, same monthly amount expected"
+        +-- Evidence[1]: Policy "§2.1: Duplicate bookings must be reversed within 5 business days"
+        +-- Evidence[2]: CRM "Rental contract V0003: 1,404.17 EUR/month since 01.01.2025"
 ```
 
 ---
 
-## 3. Retrieval-Strategie
+## 3. Retrieval Strategy
 
-### Zwei-Stufen-Architektur (nicht eine einzelne RAG-Pipeline)
+### Two-tier architecture (not a single RAG pipeline)
 
-**Tier 1 — Deterministischer Lookup (deckt ~60% der "Warum?"-Fragen ab)**
+**Tier 1 — Deterministic lookup (covers ~60% of "Why?" questions)**
 
-Direkte Key-Value Lookups ohne jegliches Halluzinationsrisiko:
+Direct key-value lookups with zero hallucination risk:
 
-| Frage                                   | Lookup                          | Quelle          |
-| --------------------------------------- | ------------------------------- | --------------- |
-| "Was ist Konto 070000?"                 | `glAccount → definition`        | Data Dictionary |
-| "Was bedeutet Steuercode V19?"          | `taxCode → description`         | Data Dictionary |
-| "Was ist Belegart KR?"                  | `docType → description`         | Data Dictionary |
-| "Wer verantwortet Kostenstelle 3000?"   | `costCenter → owner`            | Data Dictionary |
-| "Wie wird 'Kritische Flags' berechnet?" | `kpiId → formula + derivedFrom` | KPI Registry    |
+| Question | Lookup | Source |
+|----------|--------|--------|
+| "What is account 070000?" | `glAccount → definition` | Data Dictionary |
+| "What does tax code V19 mean?" | `taxCode → description` | Data Dictionary |
+| "What is document type KR?" | `docType → description` | Data Dictionary |
+| "Who is responsible for cost center 3000?" | `costCenter → owner` | Data Dictionary |
+| "How is 'Critical Flags' calculated?" | `kpiId → formula + derivedFrom` | KPI Registry |
 
-Implementation: Einfache Maps die beim Startup geladen werden — gleiches Pattern wie das existierende `account-master.ts`. Null Latenz, null Fehlerrisiko.
+Implementation: Simple maps loaded at startup — same pattern as the existing `account-master.ts`. Zero latency, zero error risk.
 
-**Tier 2 — Semantische Suche für Richtlinien/SOPs**
+**Tier 2 — Semantic search for policies/SOPs**
 
-Für Fragen die nicht durch einen einfachen Lookup beantwortet werden können:
+For questions that cannot be answered by a simple lookup:
 
-1. **Chunking:** Policy-Dokumente in Absätze/Abschnitte zerteilen (~200-500 Tokens pro Chunk). Jeder Chunk behält Metadaten (Dokumenttitel, Abschnittsnummer, Version, Gültigkeitsdatum).
+1. **Chunking:** Split policy documents into paragraphs/sections (~200-500 tokens per chunk). Each chunk retains metadata (document title, section number, version, effective date).
 
-2. **Embedding:** Chunks mit einem leichtgewichtigen Modell embedden (z.B. `text-embedding-3-small`). Gespeichert in einem Vector-Index:
-   - **MVP:** In-Memory HNSW (reicht für <1000 Chunks, kein externer Service nötig)
-   - **Später:** pgvector wenn eine Datenbank hinzukommt
+2. **Embedding:** Embed chunks with a lightweight model (e.g., `text-embedding-3-small`). Stored in a vector index:
+   - **MVP:** In-memory HNSW (sufficient for <1000 chunks, no external service needed)
+   - **Later:** pgvector when a database is added
 
-3. **Query-Konstruktion:** Der Query wird aus dem Flag-Kontext gebaut:
-
+3. **Query construction:** The query is built from the flag context:
    ```
    "{bookingText} {glAccountName} {flagType} {flagExplanation}"
    ```
+   Example: "Lieferant Mueller GmbH Miete duplicate_booking same amount same vendor"
 
-   Beispiel: "Lieferant Müller GmbH Miete duplicate_booking same amount same vendor"
+4. **Ranking:** Return top-3 chunks. Only display chunks with similarity score ≥ 0.78. Tier 1 results always rank above Tier 2 (deterministic beats probabilistic).
 
-4. **Ranking:** Top-3 Chunks zurückgeben. Nur Chunks mit Similarity-Score ≥ 0.78 anzeigen. Tier-1-Ergebnisse werden immer über Tier-2 gerankt (deterministische Ergebnisse haben Vorrang).
+### Evidence-first display (no black-box answering)
 
-### Evidence-First Display (kein Black-Box-Answering)
+- **Never** show a generated summary without the source excerpt
+- Each `ContextEvidence` is rendered as a collapsible card: source type icon, excerpt, link to full document
+- The **user** judges relevance, not the system
+- No LLM in the critical path in v1 — pure retrieval + display
 
-- **Nie** eine generierte Zusammenfassung ohne Quellauszug anzeigen
-- Jede `ContextEvidence` wird als aufklappbare Karte gerendert: Quelltyp-Icon, Auszug, Link zum Volldokument
-- Der **User** beurteilt die Relevanz, nicht das System
-- Kein LLM im kritischen Pfad in v1 — reines Retrieval + Anzeige
+### Future phase: LLM synthesizer
 
-### Spätere Phase: LLM-Synthesizer
+Once Tier 1 + Tier 2 are stable, an LLM summarizer can synthesize evidence into a narrative answer:
 
-Wenn Tier 1 + Tier 2 stabil laufen, kann ein LLM-Summarizer die Evidenz zu einer narrativen Antwort zusammenfassen:
+> "This document was flagged as a possible duplicate (87% confidence). The rental contract with Mueller GmbH (V0003) specifies 1,404.17 EUR/month (CRM note). Per policy §2.1, duplicate bookings must be reversed within 5 business days."
 
-> "Dieser Beleg wurde als mögliches Duplikat erkannt (87% Confidence). Der Mietvertrag mit Müller GmbH (V0003) sieht 1.404,17 EUR/Monat vor (CRM-Notiz). Laut Richtlinie §2.1 müssen Doppelbuchungen innerhalb von 5 Werktagen storniert werden."
-
-Aber: Die Evidenz-Karten bleiben **immer** sichtbar neben der Zusammenfassung. Der User muss die Quellen prüfen können.
-
----
-
-## 4. Risiken + Mitigations
-
-### Risiko 1: Veraltete Richtlinien führen zu falschen Erklärungen
-
-**Problem:** SOPs ändern sich. Wenn der eingebettete Corpus veraltet ist, zitiert das System selbstbewusst eine überholte Regel. Ein Buchhalter der sich auf eine alte Richtlinie verlässt, trifft falsche Entscheidungen.
-
-**Mitigation:**
-
-- **Versions-Stempel:** Jeder Policy-Chunk bekommt beim Embedden einen Versions-Hash und ein Datum. Die Evidence-Karte zeigt: `[v2.1, gültig seit 01.01.2025]`
-- **Deploy-Time Drift-Check:** Beim Build prüfen ob Policy-Dateien sich seit dem letzten Embedding geändert haben. Wenn Drift > 30 Tage ohne Re-Embedding → Build-Warning (nicht Block, aber sichtbar)
-- **Ablaufdatum:** Policies können ein `valid_until` Feld haben. Abgelaufene Chunks werden im UI mit ⚠️ "Möglicherweise veraltet" markiert
-- **Organisatorisch:** Policy-Owners werden im KPI-Registry benannt → klarer Ansprechpartner wenn etwas veraltet ist
-
-### Risiko 2: Semantische Suche liefert plausiblen aber irrelevanten Kontext (False Grounding)
-
-**Problem:** Eine Richtlinie über "Reisekostenabrechnung ab 5.000 EUR" könnte für ein Flag auf einer Lieferantenrechnung auftauchen, einfach weil beide "5.000 EUR" erwähnen. Der User vertraut dem System und handelt auf Basis einer irrelevanten Richtlinie.
-
-**Mitigation:**
-
-- **Similarity-Threshold:** Mindest-Score von 0.78. Darunter wird nichts angezeigt — lieber keine Evidenz als falsche
-- **Tier-1-Vorrang:** Wenn der deterministische Lookup einen Treffer hat (z.B. Kontodefinition), wird er immer über semantische Ergebnisse gerankt. Deterministisch schlägt probabilistisch
-- **Kontext-Eingrenzung:** Semantic Search wird auf relevante Policy-Kategorien eingeschränkt (z.B. ein Flag auf "Reisekosten" sucht nur in der Reisekostenrichtlinie, nicht im gesamten Corpus). Implementiert über Metadaten-Filter auf den Chunks
-- **Retrieval-Monitoring:** Queries und Scores loggen. Monatlich die Bottom-Quartile-Matches reviewen und Thresholds anpassen
-- **Transparenz:** Jede Evidence-Karte zeigt den Relevance-Score. User können auf einen Blick sehen ob ein Ergebnis 0.95 (sehr relevant) oder 0.79 (gerade so über Threshold) ist
+But: The evidence cards **always** remain visible alongside the summary. The user must be able to verify the sources.
 
 ---
 
-## 5. Integration in die bestehende Architektur
+## 4. Risks + Mitigations
 
-### Wo es reinpasst
+### Risk 1: Stale policies lead to incorrect explanations
+
+**Problem:** SOPs change. If the embedded corpus is outdated, the system confidently cites a superseded rule. An accountant relying on an old policy makes incorrect decisions.
+
+**Mitigation:**
+- **Version stamps:** Each policy chunk gets a version hash and date at embed time. The evidence card shows: `[v2.1, effective since 01.01.2025]`
+- **Deploy-time drift check:** At build time, check if policy files have changed since the last embedding. If drift > 30 days without re-embedding → build warning (not blocking, but visible)
+- **Expiry dates:** Policies can have a `valid_until` field. Expired chunks are marked in the UI with "Possibly outdated"
+- **Organizational:** Policy owners are named in the KPI registry → clear point of contact when something is outdated
+
+### Risk 2: Semantic search returns plausible but irrelevant context (false grounding)
+
+**Problem:** A policy about "travel expense reimbursement above 5,000 EUR" could surface for a flag on a vendor invoice simply because both mention "5,000 EUR". The user trusts the system and acts based on an irrelevant policy.
+
+**Mitigation:**
+- **Similarity threshold:** Minimum score of 0.78. Below that, nothing is displayed — better no evidence than wrong evidence
+- **Tier 1 priority:** If the deterministic lookup has a hit (e.g., account definition), it always ranks above semantic results. Deterministic beats probabilistic
+- **Context scoping:** Semantic search is restricted to relevant policy categories (e.g., a flag on "travel expenses" only searches the travel expense policy, not the entire corpus). Implemented via metadata filters on chunks
+- **Retrieval monitoring:** Log queries and scores. Monthly review of bottom-quartile matches to tune thresholds
+- **Transparency:** Each evidence card shows the relevance score. Users can see at a glance whether a result is 0.95 (very relevant) or 0.79 (barely above threshold)
+
+---
+
+## 5. Integration into Existing Architecture
+
+### Where it fits
 
 ```
-Bestehendes System:                    Context Engineering Layer:
+Existing system:                       Context Engineering Layer:
 
-BookingService                         ContextService (NEU)
+BookingService                         ContextService (NEW)
   getDashboardSummary()                  getEvidence(flagId) → ContextEvidence[]
   getBookings(filters)                   getKpiDefinition(kpiId) → KpiDefinition
   getBookingDetail(docId)                getDictionaryEntry(key) → DictionaryEntry
   getRelatedContext(docId)
 ```
 
-- `ContextService` ist ein **separates Interface** neben `BookingService`, nicht eingebettet darin
-- Evidence wird **lazy** geladen: die Detail-Seite ruft `getEvidence()` erst auf wenn sie rendert
-- Das Batch-Flagging (`flag-engine`, `duplicate-detector`) bleibt unverändert — Context Engineering ist ein Read-Path-Feature, kein Write-Path-Feature
+- `ContextService` is a **separate interface** alongside `BookingService`, not embedded within it
+- Evidence is loaded **lazily**: the detail page calls `getEvidence()` only when it renders
+- Batch flagging (`flag-engine`, `duplicate-detector`) remains unchanged — Context Engineering is a read-path feature, not a write-path feature
 
-### Implementierungs-Reihenfolge
+### Implementation order
 
-1. **Data Dictionary erweitern** — `account-master.ts` um Beschreibungen, typische Ranges, Gegenkonten erweitern. KPI-Registry als statisches TypeScript-Modul. → Tier-1 Lookups funktionieren
-2. **Evidence-UI bauen** — `ContextEvidence`-Karten in der Detail-Ansicht. Aufklappbar, mit Quelltyp-Icon und Link
-3. **Policy-Dokumente anlegen** — 3-5 Beispiel-Richtlinien als Markdown. Chunking + Embedding Pipeline
-4. **Semantic Search** — In-Memory Vector Index, Query-Builder, Ranking mit Tier-1-Vorrang
-5. **Live-Quellen** — Approval-Workflows, CRM (Tier 2) erst wenn die UI validiert ist
+1. **Extend Data Dictionary** — Add descriptions, typical ranges, contra accounts to `account-master.ts`. KPI registry as a static TypeScript module. → Tier 1 lookups work
+2. **Build evidence UI** — `ContextEvidence` cards in the detail view. Collapsible, with source type icon and link
+3. **Create policy documents** — 3-5 example policies as Markdown. Chunking + embedding pipeline
+4. **Semantic search** — In-memory vector index, query builder, ranking with Tier 1 priority
+5. **Live sources** — Approval workflows, CRM (Tier 2) only after the UI is validated

@@ -1,63 +1,63 @@
 # Booking Insights
 
-Finanz-Analyse-App auf Basis von Buchungsdaten (Journal Entries) im SAP-Stil. Erkennt Red Flags, Anomalien und potenziell falsche Buchungen.
+Financial analysis app based on SAP-style journal entry data. Detects red flags, anomalies, and potentially incorrect bookings.
 
 **Live Demo:** https://booking-insights-farambis-projects.vercel.app
 
-## Buchungsdaten
+## Booking Data
 
-Die App arbeitet mit generierten SAP FI Journal Entries. Details zum Datenmodell, Generierung und Kontenlogik siehe [src/lib/data/README.md](src/lib/data/README.md).
+The app works with generated SAP FI journal entries. Details on the data model, generation, and chart of accounts are in [src/lib/data/README.md](src/lib/data/README.md).
 
 ## Exercise 2: Anomaly Detection & Duplicate Detection
 
-Die App erkennt auffällige Buchungen über mehrere Detektoren, die beim Start einmalig auf alle Journal Entries angewendet werden. Jeder Detektor produziert Flags mit Typ, Severity (critical/warning), Confidence-Score und menschenlesbarer Erklärung.
+The app detects suspicious bookings using multiple detectors that run once at startup against all journal entries. Each detector produces flags with a type, severity (critical/warning), confidence score, and human-readable explanation.
 
-### Wie das Flagging funktioniert
+### How Flagging Works
 
 ```
 journal-entries.json
         |
         v
-  Detektoren (parallel, unabhängig voneinander):
-  |-- Text-Anomalien (Tippfehler, ungewoehnliche Text-Konto-Kombis, Text-Duplikate)
-  |-- Duplikat-Erkennung (Multi-Signal Scoring ueber 9 Kriterien)
-  |-- Pattern-Erkennung (ungewoehnliche Betraege, Rundungszahlen, Muster-Brueche)
-  |-- Regel-Verletzungen (abgeleitet aus Buchungsregeln)
+  Detectors (parallel, independent):
+  |-- Text anomalies (typos, unusual text-account combos, text duplicates)
+  |-- Duplicate detection (multi-signal scoring across 9 criteria)
+  |-- Pattern detection (unusual amounts, round numbers, pattern breaks)
+  |-- Rule violations (derived from booking rules)
         |
         v
-  Flags werden pro Beleg zusammengefuehrt + dedupliziert
+  Flags are merged per document + deduplicated
         |
         v
-  BookingService (gecacht, bedient Dashboard + Liste + Detail-Ansicht)
+  BookingService (cached, serves dashboard + list + detail view)
 ```
 
-**Flag-Typen:**
-- `duplicate_booking` — Multi-Signal Duplikat (Betrag + Vendor + Konto + Text + Datum)
-- `text_typo` — Tippfehler im Buchungstext (Levenshtein-Distanz)
-- `unusual_text_account` — Ungewoehnliche Text-Konto-Kombination
-- `text_duplicate_posting` — Text-basiertes Duplikat (gleiche Signatur, kurzer Zeitabstand)
-- `unusual_amount` — Betrag weicht stark vom Kontodurchschnitt ab
-- `round_number_anomaly` — Verdaechtig runder Betrag
-- `pattern_break` — Buchung auf falscher Soll/Haben-Seite
-- `missing_counterpart` — Beleg ohne Gegenbuchung
-- `rule_violation` — Verletzung einer abgeleiteten Buchungsregel
+**Flag types:**
+- `duplicate_booking` — Multi-signal duplicate (amount + vendor + account + text + date)
+- `text_typo` — Typo in booking text (Levenshtein distance)
+- `unusual_text_account` — Unusual text-account combination
+- `text_duplicate_posting` — Text-based duplicate (same signature, short time gap)
+- `unusual_amount` — Amount deviates significantly from account average
+- `round_number_anomaly` — Suspiciously round amount
+- `pattern_break` — Booking on wrong debit/credit side
+- `missing_counterpart` — Document without counterpart entry
+- `rule_violation` — Violation of a derived booking rule
 
 ### PR [#1](https://github.com/farambis/booking-insights/pull/1) — Text-Based Anomaly Detection
 
-Drei Detektoren fuer Buchungstext-Anomalien: Tippfehler via Levenshtein-Distanz, ungewoehnliche Text-Konto-Kombinationen via Haeufigkeitsanalyse, und text-basierte Duplikaterkennung via Dokument-Signaturen.
+Three detectors for booking text anomalies: typos via Levenshtein distance, unusual text-account combinations via frequency analysis, and text-based duplicate detection via document signatures.
 
-**Wichtigste Erkenntnis:** 99.8% False-Positive-Rate im Tippfehler-Detektor durch datumsbasierte Buchungstexte ("Ausgangsrechnung 2025-01-15" vs "2025-01-16"). Geloest durch Normalisierung: Datumssuffixe werden vor dem Vergleich entfernt.
+**Key finding:** 99.8% false positive rate in the typo detector caused by date-suffixed booking texts ("Ausgangsrechnung 2025-01-15" vs "2025-01-16"). Resolved by normalizing texts: date suffixes are stripped before comparison.
 
 ### PR [#3](https://github.com/farambis/booking-insights/pull/3) — Multi-Signal Duplicate Booking Detection
 
-Ersetzt die einfache Text-Signatur-Duplikaterkennung durch gewichtetes Scoring ueber 9 Signale (Betrag, Vendor/Customer, Sachkonto, Gegenkonto, Buchungsdatum, Buchungstext, Belegart, Kostenstelle, Steuercode).
+Replaces basic text-signature duplicate detection with weighted scoring across 9 signals (amount, vendor/customer, GL account, contra account, posting date, booking text, document type, cost center, tax code).
 
-**Kern-Entscheidung:** Betrag-Match (≤0.50 EUR Differenz) ist ein Pflicht-Gate. Gleicher Vendor + gleiches Konto ohne gleichen Betrag ist normaler Geschaeftsvorfall, kein Duplikat. Confidence wird als Prozent angezeigt (nicht High/Medium/Low), verwandte Belege werden inline in der Flag-Karte angezeigt.
+**Key decision:** Amount match (≤0.50 EUR difference) is a required gate. Same vendor + same account without matching amount is normal business activity, not a duplicate. Confidence is shown as a percentage (not High/Medium/Low), and related documents are inlined in the flag card.
 
 ### Booking Manual / Rule Suggestions
 
-Automatisch abgeleitete Buchungsregeln aus Transaktionsdaten (Konto+Steuercode, Konto+Kostenstelle, Belegart+Kontenbereich, wiederkehrende Texte, Betragsranges). Regelverletzungen werden als eigener Flag-Typ erkannt. Details siehe [docs/exercise-3.md](docs/exercise-3.md).
+Automatically derived booking rules from transaction data (account+tax code, account+cost center, document type+account range, recurring texts, amount ranges). Rule violations are detected as a separate flag type. Details in [docs/exercise-3.md](docs/exercise-3.md).
 
 ## Exercise 3: Context Engineering
 
-Architektur-Sketch fuer kontextbasierte Erklaerbarkeit: Nicht nur Zahlen zeigen, sondern Fragen wie "Warum wurde dieser Rabatt gewaehrt?" beantworten. Zwei-Stufen-Retrieval (deterministischer Lookup + semantische Suche), Evidence-first Ansatz. Details siehe [docs/context-engineering.md](docs/context-engineering.md).
+Architecture sketch for context-based explainability: not just showing numbers, but answering questions like "Why was this discount granted?" Two-tier retrieval (deterministic lookup + semantic search), evidence-first approach. Details in [docs/context-engineering.md](docs/context-engineering.md).

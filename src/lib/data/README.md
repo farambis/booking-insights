@@ -1,38 +1,38 @@
-# Buchungsdaten
+# Booking Data
 
-Die App arbeitet mit generierten Journal Entries (`journal-entries.json`). Die Daten sind bereits im Repo enthalten.
+The app works with generated journal entries (`journal-entries.json`). The data is already included in the repo.
 
-## Neu generieren
+## Regenerating
 
 ```bash
 npm run generate:data
 ```
 
-Das Script ist deterministisch (Seed 42) — jeder Lauf erzeugt identische Daten. Absichtlich eingebaute Anomalien (Tippfehler, Doppelbuchungen, ungewöhnliche Kombinationen) werden bei der Generierung auf stdout geloggt.
+The script is deterministic (seed 42) — every run produces identical data. Intentionally planted anomalies (typos, double postings, unusual combinations) are logged to stdout during generation.
 
-## Datenmodell
+## Data Model
 
-Jede Zeile ist eine Belegposition (`JournalEntryLine`):
+Each row is a journal entry line item (`JournalEntryLine`):
 
-| Feld | Beschreibung |
-|------|-------------|
-| `company_code` | Buchungskreis (z.B. "1000") |
-| `posting_date` | Buchungsdatum |
-| `document_id` | Belegnummer |
-| `line_id` | Positionsnummer |
-| `gl_account` | Sachkonto (6-stellig, zero-padded) |
-| `cost_center` | Kostenstelle (nullable) |
-| `amount` | Betrag (immer positiv, Richtung via `debit_credit`) |
-| `currency` | Währung |
-| `debit_credit` | "S" (Soll) / "H" (Haben) |
-| `booking_text` | Buchungstext |
-| `vendor_id` | Lieferant (nullable) |
-| `customer_id` | Kunde (nullable) |
-| `tax_code` | Steuercode (nullable) |
-| `document_type` | Belegart (KR, DR, KZ, DZ, SA, AB) |
+| Field | Description |
+|-------|-------------|
+| `company_code` | Company code (e.g., "1000") |
+| `posting_date` | Posting date |
+| `document_id` | Document number |
+| `line_id` | Line item number |
+| `gl_account` | GL account (6-digit, zero-padded) |
+| `cost_center` | Cost center (nullable) |
+| `amount` | Amount (always positive, direction via `debit_credit`) |
+| `currency` | Currency |
+| `debit_credit` | "S" (debit/Soll) / "H" (credit/Haben) |
+| `booking_text` | Booking description |
+| `vendor_id` | Vendor (nullable) |
+| `customer_id` | Customer (nullable) |
+| `tax_code` | Tax code (nullable) |
+| `document_type` | Document type (KR, DR, KZ, DZ, SA, AB) |
 
-Jeder Beleg ist ausgeglichen (Summe Soll = Summe Haben).
+Every document is balanced (sum of debits = sum of credits).
 
-## Kontenlogik
+## Chart of Accounts
 
-Die Kontenbereiche und das Kontenverzeichnis sind in `account-master.ts` definiert.
+Account ranges and the GL account directory are defined in `account-master.ts`.
