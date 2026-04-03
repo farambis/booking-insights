@@ -388,26 +388,39 @@ export function generateJournalEntries(): GenerationResult {
   // -- Intentional anomalies --
 
   // 1. Near-duplicate booking texts (typos)
+  // Use texts that are guaranteed to exist: expense texts + common texts
   const typos: [string, string][] = [
     ["Büromaterial", "Büromateiral"],
     ["Telefonkosten", "Telefonksoten"],
     ["Stromkosten", "Stormkosten"],
     ["Kopierpapier", "Kopeirpapier"],
+    ["Internetkosten", "Interntkosten"],
+    ["Heizkosten", "Heizkotsen"],
+    ["Korrektur", "Korrektru"],
+    ["Periodische Abgrenzung", "Periodiche Abgrenzung"],
+    ["Buchung laut Beleg", "Buchung laut Bleg"],
+    ["Löhne Januar", "Löhne Janua"],
+    ["Löhne Februar", "Löhne Ferbruar"],
+    ["Wartung Aufzug", "Warung Aufzug"],
+    ["Reisekosten Vertrieb", "Reisekosten Vetrieb"],
+    ["Umbuchung", "Umbuuchng"],
+    ["Steuerberater", "Steuerberter"],
   ];
 
-  let typoCount = 0;
+  const usedDocIds = new Set<string>();
   for (const [correct, typo] of typos) {
-    // Find a line with the correct text and create a near-duplicate
-    const idx = allLines.findIndex((l) => l.booking_text.includes(correct));
-    if (idx !== -1 && typoCount < 5) {
+    const idx = allLines.findIndex(
+      (l) => l.booking_text === correct && !usedDocIds.has(l.document_id),
+    );
+    if (idx !== -1) {
+      usedDocIds.add(allLines[idx].document_id);
       allLines[idx] = {
         ...allLines[idx],
-        booking_text: allLines[idx].booking_text.replace(correct, typo),
+        booking_text: typo,
       };
       anomalies.push(
         `TYPO: Document ${allLines[idx].document_id} line ${allLines[idx].line_id}: "${typo}" (should be "${correct}")`,
       );
-      typoCount++;
     }
   }
 
@@ -416,7 +429,7 @@ export function generateJournalEntries(): GenerationResult {
     (l) => l.line_id === 1 && l.debit_credit === "S",
   );
   let doubleCount = 0;
-  for (let i = 0; i < doubleCandidates.length - 1 && doubleCount < 3; i++) {
+  for (let i = 0; i < doubleCandidates.length - 1 && doubleCount < 2; i++) {
     const orig = doubleCandidates[i];
     // Create a near-duplicate document
     const newDocId = String(docNumber++);
@@ -562,6 +575,37 @@ export function generateJournalEntries(): GenerationResult {
     anomalies.push(
       `UNUSUAL: Document ${allLines[unusualLine3Idx].document_id} line ${allLines[unusualLine3Idx].line_id}: Revenue account ${ra.number} on debit side of GL posting`,
     );
+  }
+
+  // 4. Additional unusual text-account combos to reach ~8% warning rate
+  // Find lines with expense texts posted to their normal accounts and
+  // swap some to wrong accounts
+  const unusualSwaps: { text: string; wrongAccount: string; wrongName: string }[] = [
+    { text: "Miete Büro", wrongAccount: "050000", wrongName: "Wareneinkauf" },
+    { text: "Gehälter", wrongAccount: "070300", wrongName: "Bürobedarf" },
+    { text: "Reisekosten Vertrieb", wrongAccount: "060000", wrongName: "Gehälter" },
+    { text: "Steuerberater", wrongAccount: "070600", wrongName: "Marketing" },
+  ];
+
+  for (const swap of unusualSwaps) {
+    const idx = allLines.findIndex(
+      (l) =>
+        l.booking_text.includes(swap.text) &&
+        l.debit_credit === "S" &&
+        l.gl_account !== swap.wrongAccount &&
+        !anomalies.some((a) => a.includes(l.document_id)),
+    );
+    if (idx !== -1) {
+      const origAccount = allLines[idx].gl_account;
+      allLines[idx] = {
+        ...allLines[idx],
+        gl_account: swap.wrongAccount,
+        cost_center: null,
+      };
+      anomalies.push(
+        `UNUSUAL: Document ${allLines[idx].document_id} line ${allLines[idx].line_id}: "${swap.text}" posted to ${swap.wrongAccount} (${swap.wrongName}) instead of typical account ${origAccount}`,
+      );
+    }
   }
 
   // Sort by date, then document_id, then line_id
