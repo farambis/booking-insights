@@ -17,10 +17,16 @@ function confidenceColor(confidence: number): string {
 function violationLink(rule: BookingRule): string | null {
   if (rule.violationCount === 0) return null;
   const params = new URLSearchParams();
-  params.set("flagTypes", "pattern_break");
+  // Filter by account when available
   if (rule.scope.glAccount) {
     params.set("account", rule.scope.glAccount);
   }
+  // Use search for text-based rules (partial match on booking text)
+  if (rule.scope.textPattern) {
+    params.set("search", rule.scope.textPattern);
+  }
+  // Note: costCenter and documentType filters are not yet supported
+  // in the bookings filter system. These links filter by what's available.
   return `/bookings?${params.toString()}`;
 }
 
