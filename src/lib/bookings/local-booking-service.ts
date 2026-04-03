@@ -107,7 +107,7 @@ function transformAndFlag(rawLines: JournalEntryLine[]): BookingDetail[] {
     bookings.push({
       documentId,
       postingDate: primary.posting_date,
-      description: primary.booking_text,
+      description: [...new Set(docLines.map((l) => l.booking_text))].join(" · "),
       glAccount: primary.gl_account,
       glAccountName: lookupAccountName(primary.gl_account),
       contraAccount: contraLine?.gl_account ?? null,
