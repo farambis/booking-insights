@@ -94,11 +94,16 @@ Active filters are stored in the URL as query params (e.g., `/bookings?status=cr
 
 ### View Map
 
-| Route                     | Purpose                                        |
-| ------------------------- | ---------------------------------------------- |
-| `/`                       | Dashboard — health summary, KPI cards, charts  |
-| `/bookings`               | Booking List — searchable, filterable table    |
-| `/bookings/[document_id]` | Booking Detail — full context for one document |
+| Route                     | Purpose                                             |
+| ------------------------- | --------------------------------------------------- |
+| `/`                       | Redirects to `/dashboard`                           |
+| `/dashboard`              | Dashboard — health summary, KPI cards, charts       |
+| `/bookings`               | Booking List — searchable, filterable table         |
+| `/bookings/[document_id]` | Booking Detail — full context for one document      |
+| `/manual`                 | Booking Manual — derived rules and their violations |
+| `/manual/[ruleId]`        | Rule violations — bookings that violate a rule      |
+
+KPI cards on the dashboard are clickable links to filtered bookings (e.g., clicking "Critical Flags" navigates to `/bookings?status=critical`). The topbar logo is a link to `/dashboard`.
 
 ---
 
@@ -212,11 +217,14 @@ Font:        monospace for the number portion
 ### Flag Type Labels
 
 ```
-duplicate_entry      → "Duplicate Entry"
-missing_counterpart  → "Missing Counterpart"
-unusual_amount       → "Unusual Amount"
-pattern_break        → "Pattern Break"
-round_number_anomaly → "Round Number Anomaly"
+duplicate_booking        → "Duplicate Booking"
+missing_counterpart      → "Missing Counterpart"
+unusual_amount           → "Unusual Amount"
+pattern_break            → "Pattern Break"
+round_number_anomaly     → "Round Number Anomaly"
+text_typo                → "Text Typo"
+unusual_text_account     → "Unusual Text-Account"
+text_duplicate_posting   → "Text Duplicate Posting"
 ```
 
 ### Confidence Levels

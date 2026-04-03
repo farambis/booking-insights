@@ -477,7 +477,7 @@ export function generateJournalEntries(): GenerationResult {
   // Use texts that are guaranteed to exist: expense texts + common texts
   // Only target texts that actually appear in the generated data
   const typos: [string, string][] = [
-    ["Büromaterial", "Büromateiral"],
+    ["Google Ads", "Googel Ads"],
     ["Telefonkosten", "Telefonksoten"],
     ["Korrektur", "Korrektru"],
     ["Periodische Abgrenzung", "Periodiche Abgrenzung"],
@@ -492,7 +492,7 @@ export function generateJournalEntries(): GenerationResult {
     ],
     ["Umbuchung", "Umbuuchng"],
     ["Reisekosten Vertrieb", "Reisekosten Vetrieb"],
-    ["Reisekosten Messe", "Reisekosten Mese"],
+    ["Rechtsanwalt", "Rechtsanawlt"],
   ];
 
   const usedDocIds = new Set<string>();
@@ -510,6 +510,13 @@ export function generateJournalEntries(): GenerationResult {
         `TYPO: Document ${allLines[idx].document_id} line ${allLines[idx].line_id}: "${typo}" (should be "${correct}")`,
       );
     }
+  }
+
+  const injectedCount = usedDocIds.size;
+  if (injectedCount < typos.length) {
+    console.warn(
+      `WARNING: Only ${injectedCount} of ${typos.length} typo targets found in generated data`,
+    );
   }
 
   // 2. Possible double postings (similar documents within 1-2 days)

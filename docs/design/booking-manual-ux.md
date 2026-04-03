@@ -78,23 +78,19 @@ Rationale:
 
 ### 2.4 How do violations connect to the bookings list?
 
-**Decision: "View violations in Bookings" link that pre-applies a filter.**
+**Decision: "View violations" links go to `/manual/[ruleId]` — a dedicated violations page.**
 
-Rationale:
-
-- The Booking List already has a URL-based filter system. A rule violation link should be a pre-filtered Bookings URL, not a separate page.
-- This is low implementation cost and reuses an established pattern.
-- For MVP, a deep link is sufficient. A future version could add a dedicated "violations" view with per-rule context.
+The `/manual/[ruleId]` page shows the rule details (title, description, match rate) at the top and a `BookingTable` of violating bookings below, with sorting support. The `BookingService.getRuleViolations(ruleId)` method provides the data.
 
 ### 2.5 How does this relate to the existing flag system?
 
-**Decision: Violation count on a rule card is linked to the bookings list filtered by the `pattern_break` flag type AND the relevant account/dimension. Rules do NOT add new flags to the table — the existing flag system already captures violations as `pattern_break`.**
+**Decision: Rules are separate from flags. Violations are handled through `getRuleViolations(ruleId)` and the `/manual/[ruleId]` page, not through the flag system.**
 
 Rationale:
 
 - The Booking Manual makes existing flags explainable. It does not replace or duplicate them.
-- Adding a new "manual_violation" flag type would create a second source of truth and confuse the status system.
-- The connection between a rule and its violations is via the existing `pattern_break` flag, surfaced through filtered navigation.
+- Violations are surfaced via the dedicated violations page per rule, not via a separate flag type.
+- The connection between a rule and its violations is through the `BookingService.getRuleViolations()` method.
 
 ---
 
@@ -112,27 +108,33 @@ Manual            /manual         ← new
 
 ```
 /manual                    List of all rules (the Booking Manual page)
+/manual/[ruleId]           Violations for a single rule (dedicated page with BookingTable)
 ```
-
-No sub-routes needed for MVP. Rules are not individually addressable — they are shown as a list on one page.
 
 ### Data Model (for developer reference)
 
-Each rule the UI must represent:
+Types are defined in `src/lib/bookings/rule.types.ts`:
 
 ```
-Rule {
-  id:            string            // internal identifier
-  description:   string            // human-readable: "Account 070000 always posted with V19"
-  category:      RuleCategory      // "account_tax" | "cost_center" | "recurring" | "document_type"
-  confidence:    number            // 0–100 — how consistently the pattern holds
-  evidenceCount: number            // total bookings supporting this rule
-  exampleIds:    string[]          // 2–3 document IDs shown inline
-  violationCount: number           // bookings that break the rule
-  violationFilterUrl: string       // pre-built /bookings URL for violations
-  evidenceFilterUrl:  string       // pre-built /bookings URL for all matching bookings
+RuleCategory = "account_tax_code" | "account_cost_center" | "document_type_account"
+             | "recurring_text" | "amount_range"
+
+BookingRule {
+  id:             string
+  title:          string            // human-readable title
+  description:    string            // "Account 070000 always posted with V19"
+  category:       RuleCategory
+  confidence:     number            // 0–1
+  supportCount:   number            // bookings supporting this rule
+  totalEvaluated: number            // total bookings evaluated
+  supportRatio:   number            // supportCount / totalEvaluated
+  evidence:       RuleEvidence[]    // example bookings (documentId, postingDate, etc.)
+  violationCount: number            // bookings that break the rule
+  scope:          RuleScope         // category-specific scope (glAccount, taxCode, etc.)
 }
 ```
+
+Rule mining is in `src/lib/bookings/rule-miner.ts`. Violations are detected by `src/lib/bookings/rule-violations.ts`.
 
 ---
 
@@ -326,15 +328,11 @@ The sidebar nav item "Manual" follows the exact same `SidebarNavItem` component 
 
 ```
 ManualRuleCardProps {
-  category:           string           // display label: "Account + Tax Code Rule"
-  description:        string           // "Account 070000 is always posted with tax code V19."
-  confidence:         number           // 0–100
-  exampleIds:         string[]         // max 3, linked to /bookings/[id]
-  violationCount:     number
-  violationFilterUrl: string | null    // null if violationCount is 0
-  evidenceFilterUrl:  string           // always present
+  rule: BookingRule       // single prop — the full BookingRule object from rule.types.ts
 }
 ```
+
+The card internally derives the category label, match rate (supportRatio), confidence bar color, evidence links, and violation link (`/manual/[ruleId]`) from the `BookingRule`.
 
 **Layout structure:**
 
@@ -399,10 +397,9 @@ Placed after "Bookings", before any future additions.
 
 ### Clicking "View violations →"
 
-- Target: `violationFilterUrl` — a pre-built `/bookings?flag=pattern_break&account=070000` style URL (exact filter params depend on the rule category)
-- Opens the Bookings list pre-filtered to the violating bookings
-- The user sees the standard BookingTable with the filter bar showing the active filters
-- No special UI on the Bookings page to indicate "you arrived from the Manual" — the filter state is self-explanatory for MVP
+- Target: `/manual/[ruleId]` — a dedicated violations page for that rule
+- The page shows the rule details (title, description, match rate) at the top, followed by a `BookingTable` of violating bookings with sorting support
+- The `BookingService.getRuleViolations(ruleId)` method provides the data
 
 ### Clicking "View all matching bookings" (optional, future)
 
@@ -512,14 +509,14 @@ The page is a server component. Loading is handled by the Next.js loading.tsx co
 ```
 Rule: "Account 070000 always posted with tax code V19"   [Booking Manual]
   ↓ when a booking violates this
-Flag: pattern_break on that booking                       [Flag system]
-  ↓ visible in
+Violation: visible on /manual/[ruleId]                    [Violations page]
+  ↓ the booking may also have flags
 Booking list: amber/red row + StatusBadge                 [Bookings page]
   ↓ explained in
 FlagExplanationCard: "Pattern break — ..."               [Booking Detail]
 ```
 
-The Booking Manual is the top of this chain — it provides the explicit rule that contextualizes every `pattern_break` flag downstream.
+The Booking Manual provides the explicit rules that contextualize patterns in the data. Violations are surfaced through the dedicated `/manual/[ruleId]` page, not through the flag system.
 
 ### What this means for the Bookings page
 
@@ -558,12 +555,15 @@ New files needed:
 ```
 src/app/(app)/manual/page.tsx
 src/app/(app)/manual/loading.tsx
+src/app/(app)/manual/[ruleId]/page.tsx
+src/app/(app)/manual/[ruleId]/loading.tsx
 src/components/manual-rule-card.tsx
 ```
 
-Data / service layer (developer-defined, not UX scope):
+Data / service layer:
 
 ```
-src/lib/manual/manual.types.ts    — ManualRule type
-src/lib/manual/manual-service.ts  — getRules(), violationFilterUrl() helper
+src/lib/bookings/rule.types.ts       — BookingRule, RuleCategory, RuleScope, RuleEvidence types
+src/lib/bookings/rule-miner.ts       — Derives rules from transaction data
+src/lib/bookings/rule-violations.ts  — Detects violations of derived rules
 ```

@@ -56,7 +56,10 @@ journal-entries.json
 - `round_number_anomaly` — Suspiciously round amount
 - `pattern_break` — Booking on wrong debit/credit side
 - `missing_counterpart` — Document without counterpart entry
-- `rule_violation` — Violation of a derived booking rule
+
+Violations of derived booking rules are handled separately through `BookingService.getRuleViolations()` and the `/manual/[ruleId]` violations page, not through the flag system.
+
+CI pipeline: `.github/workflows/ci.yml` runs lint, typecheck, and tests on every push and pull request.
 
 Each PR was reviewed by code-reviewer, UX-designer, and software-architect agents. All review comments are available directly on the PRs.
 

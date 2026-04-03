@@ -26,11 +26,21 @@
 
 - `src/app/` — App Router pages and layouts
 - `src/app/layout.tsx` — Root layout
-- `src/app/page.tsx` — Home page
+- `src/app/page.tsx` — Root redirect to `/dashboard`
 - `src/app/not-found.tsx` — Custom 404 page
 - `src/app/error.tsx` — Route error boundary
 - `src/app/global-error.tsx` — Root layout error boundary
+- `src/app/(app)/` — Route group with app shell (topbar + sidebar)
+  - `dashboard/` — Dashboard overview (KPI cards, charts)
+  - `bookings/` — Booking list and `[documentId]` detail
+  - `manual/` — Booking Manual (rule list) and `[ruleId]` violations
+- `src/components/` — Reusable components
+  - `shell/` — Topbar, Sidebar, SidebarNavItem
+  - `filter-bar/` — FilterBar + child filter controls
+  - `charts/` — FlagDistributionChart, ActivityTimeChart
+- `src/lib/bookings/` — Core business logic (BookingService interface, detectors, rule mining, types)
 - `src/lib/env.ts` — Environment variable validation (t3-env + Zod)
+- `.github/workflows/ci.yml` — CI pipeline (lint, typecheck, tests)
 - `public/` — Static assets
 - `@/*` path alias maps to `./src/*`
 
