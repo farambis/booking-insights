@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { JournalEntryLine } from "@/lib/data/journal-entry.types";
 import {
+  normalizeForComparison,
   detectTypos,
   detectUnusualTextAccountCombos,
   detectTextDuplicatePostings,
@@ -30,6 +31,28 @@ function makeLine(
     ...overrides,
   };
 }
+
+describe("normalizeForComparison", () => {
+  it("strips trailing ISO dates", () => {
+    expect(normalizeForComparison("Ausgangsrechnung 2025-01-15")).toBe(
+      "Ausgangsrechnung",
+    );
+  });
+
+  it("strips trailing numbers", () => {
+    expect(normalizeForComparison("Kundenrechnung 12345")).toBe(
+      "Kundenrechnung",
+    );
+  });
+
+  it("leaves text without trailing dates/numbers unchanged", () => {
+    expect(normalizeForComparison("Büromaterial")).toBe("Büromaterial");
+  });
+
+  it("strips date then number suffix", () => {
+    expect(normalizeForComparison("Rechnung 2025-01-15")).toBe("Rechnung");
+  });
+});
 
 describe("detectTypos", () => {
   it("flags the less frequent text as a suspected typo (distance 1)", () => {
@@ -61,6 +84,29 @@ describe("detectTypos", () => {
     const lines: JournalEntryLine[] = [
       makeLine({ document_id: "D1", line_id: 1, booking_text: "Same Text" }),
       makeLine({ document_id: "D2", line_id: 1, booking_text: "Same Text" }),
+    ];
+
+    const result = detectTypos(lines);
+    expect(result.size).toBe(0);
+  });
+
+  it("does not flag date-suffixed variants of the same base text", () => {
+    const lines: JournalEntryLine[] = [
+      makeLine({
+        document_id: "D1",
+        line_id: 1,
+        booking_text: "Ausgangsrechnung 2025-01-15",
+      }),
+      makeLine({
+        document_id: "D2",
+        line_id: 1,
+        booking_text: "Ausgangsrechnung 2025-01-16",
+      }),
+      makeLine({
+        document_id: "D3",
+        line_id: 1,
+        booking_text: "Ausgangsrechnung 2025-01-17",
+      }),
     ];
 
     const result = detectTypos(lines);
