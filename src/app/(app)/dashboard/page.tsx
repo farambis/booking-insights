@@ -68,24 +68,28 @@ export default async function DashboardPage() {
           formattedValue={summary.totalDocuments.toLocaleString("de-DE")}
           subtitle={`${summary.totalLines.toLocaleString("de-DE")} lines`}
           variant="default"
+          href="/bookings"
         />
         <KpiCard
           label="Critical Flags"
           formattedValue={summary.criticalCount.toLocaleString("de-DE")}
           subtitle={`${criticalPercent}% of docs`}
           variant="critical"
+          href="/bookings?status=critical"
         />
         <KpiCard
           label="Warnings"
           formattedValue={summary.warningCount.toLocaleString("de-DE")}
           subtitle={`${warningPercent}% of docs`}
           variant="warning"
+          href="/bookings?status=warning"
         />
         <KpiCard
           label="Clean"
           formattedValue={summary.cleanCount.toLocaleString("de-DE")}
           subtitle={`${summary.cleanPercent}%`}
           variant="clean"
+          href="/bookings?status=clean"
         />
       </KpiCardGrid>
 

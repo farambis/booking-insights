@@ -26,6 +26,7 @@ export function FlagDistributionChart({ data }: FlagDistributionChartProps) {
             data={data}
             layout="vertical"
             margin={{ left: 0, right: 20, top: 0, bottom: 0 }}
+            style={{ cursor: "default" }}
           >
             <XAxis type="number" hide />
             <YAxis
@@ -44,7 +45,12 @@ export function FlagDistributionChart({ data }: FlagDistributionChartProps) {
               }}
               formatter={(value) => [String(value), "Documents"]}
             />
-            <Bar dataKey="count" radius={[0, 4, 4, 0]} barSize={20}>
+            <Bar
+              dataKey="count"
+              radius={[0, 4, 4, 0]}
+              barSize={20}
+              activeBar={false}
+            >
               {data.map((entry) => (
                 <Cell key={entry.type} fill="#006fd6" />
               ))}

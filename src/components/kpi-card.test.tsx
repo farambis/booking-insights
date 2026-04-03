@@ -16,6 +16,33 @@ describe("KpiCard", () => {
     expect(screen.getByText("168")).toBeInTheDocument();
   });
 
+  it("renders as a link when href is provided", () => {
+    render(
+      <KpiCard
+        label="Critical Flags"
+        formattedValue="8"
+        subtitle="4.8% of docs"
+        variant="critical"
+        href="/bookings?status=critical"
+      />,
+    );
+    const link = screen.getByRole("link");
+    expect(link).toHaveAttribute("href", "/bookings?status=critical");
+  });
+
+  it("renders as a div when no href is provided", () => {
+    const { container } = render(
+      <KpiCard
+        label="Total"
+        formattedValue="168"
+        subtitle={null}
+        variant="default"
+      />,
+    );
+    expect(screen.queryByRole("link")).toBeNull();
+    expect(container.querySelector("div")).not.toBeNull();
+  });
+
   it("renders subtitle when provided", () => {
     render(
       <KpiCard
