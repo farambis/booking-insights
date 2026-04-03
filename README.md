@@ -8,6 +8,16 @@ Financial analysis app based on SAP-style journal entry data. Detects red flags,
 
 The app works with generated SAP FI journal entries. Details on the data model, generation, and chart of accounts are in [src/lib/data/README.md](src/lib/data/README.md).
 
+## Exercise 1: Booking Insights UI
+
+A dashboard and investigation interface for analyzing booking data, built with Next.js 16 (App Router), React 19, TypeScript, and Tailwind CSS 4.
+
+Three views: **Dashboard** (KPI cards, flag distribution chart, activity timeline, recent critical flags), **Booking List** (filterable/sortable table with URL-driven filter state), and **Booking Detail** (flag explanations with inline related documents, document lines with balance check, account context).
+
+- [Architecture Decisions](docs/architecture.md) — data flow, key decisions (BookingService interface, URL-driven state, Server/Client boundaries, module-level caching), MVP vs. permanent
+- [Technical Architecture](docs/design/booking-insights-architecture.md) — route structure, component overview, file tree
+- [UX Design](docs/design/booking-insights-ux.md) — design principles, color system, page wireframes, data display conventions
+
 ## Exercise 2: Anomaly Detection & Duplicate Detection
 
 The app detects suspicious bookings using multiple detectors that run once at startup against all journal entries. Each detector produces flags with a type, severity (critical/warning), confidence score, and human-readable explanation.
