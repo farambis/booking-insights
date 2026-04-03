@@ -6,7 +6,7 @@ interface FlagExplanationCardProps {
     type: FlagType;
     label: string;
     explanation: string;
-    confidence: "high" | "medium" | "low";
+    confidencePercent: number;
     relatedDocumentId: string | null;
   };
   severity: FlagSeverity;
@@ -17,11 +17,11 @@ const SEVERITY_STYLES: Record<FlagSeverity, string> = {
   warning: "border-l-warning bg-warning-bg",
 };
 
-const CONFIDENCE_STYLES: Record<string, string> = {
-  high: "text-critical",
-  medium: "text-warning",
-  low: "text-neutral-500",
-};
+function confidenceColor(percent: number): string {
+  if (percent >= 75) return "text-critical";
+  if (percent >= 50) return "text-warning";
+  return "text-neutral-500";
+}
 
 export function FlagExplanationCard({
   flag,
@@ -38,8 +38,10 @@ export function FlagExplanationCard({
       <div className="mt-3 flex items-center gap-4 text-xs text-neutral-500">
         <span>
           Confidence:{" "}
-          <span className={`font-medium ${CONFIDENCE_STYLES[flag.confidence]}`}>
-            {flag.confidence.charAt(0).toUpperCase() + flag.confidence.slice(1)}
+          <span
+            className={`font-medium ${confidenceColor(flag.confidencePercent)}`}
+          >
+            {Math.round(flag.confidencePercent)}%
           </span>
         </span>
         {flag.relatedDocumentId && (
