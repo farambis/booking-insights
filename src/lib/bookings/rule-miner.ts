@@ -24,14 +24,25 @@ const MIN_LINES_AMOUNT = 10;
 /** Maximum coefficient of variation for amount range rules */
 const MAX_CV_AMOUNT = 1.5;
 
-/** Minimum confidence to include a rule in the final manual */
-const MIN_CONFIDENCE = 0.6;
+/** Minimum confidence (after sample-size adjustment) to include a rule */
+const MIN_CONFIDENCE = 0.4;
 
 /** Maximum number of rules in the final manual */
 const MAX_RULES = 10;
 
 /** Maximum evidence examples per rule */
 const MAX_EVIDENCE = 3;
+
+/**
+ * Adjust raw concentration by sample size.
+ * Small samples get penalized — a 100% concentration on 5 lines
+ * is less confident than 95% on 50 lines.
+ */
+function adjustedConfidence(concentration: number, sampleSize: number): number {
+  // Penalize small samples: full confidence at 30+ lines, scaled below that
+  const sizeFactor = Math.min(1, Math.sqrt(sampleSize / 30));
+  return concentration * sizeFactor;
+}
 
 function lookupAccountName(glAccount: string): string | null {
   return GL_ACCOUNTS.find((a) => a.number === glAccount)?.name ?? null;
@@ -105,10 +116,10 @@ export function mineAccountTaxCodeRules(
       title: `Account ${account}${nameLabel} uses tax code ${dominantCode}`,
       description: `${dominantCount} of ${accountLines.length} bookings (${Math.round(concentration * 100)}%) on account ${account} use tax code ${dominantCode}.`,
       category: "account_tax_code",
-      confidence: concentration,
+      confidence: adjustedConfidence(concentration, accountLines.length),
       supportCount: dominantCount,
       totalEvaluated: accountLines.length,
-      supportRatio: dominantCount / accountLines.length,
+      supportRatio: concentration,
       evidence: buildEvidence(
         accountLines.filter((l) => l.tax_code === dominantCode),
         `Tax code: ${dominantCode}`,
@@ -164,10 +175,10 @@ export function mineAccountCostCenterRules(
       title: `Account ${account}${nameLabel} uses cost center ${dominantCC}`,
       description: `${dominantCount} of ${accountLines.length} bookings (${Math.round(concentration * 100)}%) on account ${account} use cost center ${dominantCC}.`,
       category: "account_cost_center",
-      confidence: concentration,
+      confidence: adjustedConfidence(concentration, accountLines.length),
       supportCount: dominantCount,
       totalEvaluated: accountLines.length,
-      supportRatio: dominantCount / accountLines.length,
+      supportRatio: concentration,
       evidence: buildEvidence(
         accountLines.filter((l) => l.cost_center === dominantCC),
         `Cost center: ${dominantCC}`,
@@ -218,10 +229,10 @@ export function mineDocumentTypeAccountRules(
       title: `Document type ${docType} typically uses ${dominantRange} accounts`,
       description: `${dominantCount} of ${docTypeLines.length} lines (${Math.round(concentration * 100)}%) in document type ${docType} belong to ${dominantRange} accounts.`,
       category: "document_type_account",
-      confidence: concentration,
+      confidence: adjustedConfidence(concentration, docTypeLines.length),
       supportCount: dominantCount,
       totalEvaluated: docTypeLines.length,
-      supportRatio: dominantCount / docTypeLines.length,
+      supportRatio: concentration,
       evidence: buildEvidence(
         docTypeLines.filter(
           (l) => lookupAccountRange(l.gl_account) === dominantRange,
@@ -287,10 +298,10 @@ export function mineRecurringTextRules(
       title: `${normalizedText} is posted monthly to account ${dominantAccount}${nameLabel}`,
       description: `"${normalizedText}" appears in ${months.size} months, posted to account ${dominantAccount} ${Math.round(concentration * 100)}% of the time.`,
       category: "recurring_text",
-      confidence: concentration,
+      confidence: adjustedConfidence(concentration, textLines.length),
       supportCount: dominantCount,
       totalEvaluated: textLines.length,
-      supportRatio: dominantCount / textLines.length,
+      supportRatio: concentration,
       evidence: buildEvidence(
         textLines.filter((l) => l.gl_account === dominantAccount),
         `Recurring: ${normalizedText}`,
@@ -349,7 +360,7 @@ export function mineAmountRangeRules(lines: JournalEntryLine[]): BookingRule[] {
       title: `Account ${account}${nameLabel} typically has amounts between ${q1.toFixed(2)} and ${q3.toFixed(2)} EUR`,
       description: `${inRange} of ${amounts.length} bookings (${Math.round((inRange / amounts.length) * 100)}%) on account ${account} fall within the interquartile range.`,
       category: "amount_range",
-      confidence: inRange / amounts.length,
+      confidence: adjustedConfidence(inRange / amounts.length, amounts.length),
       supportCount: inRange,
       totalEvaluated: amounts.length,
       supportRatio: inRange / amounts.length,
@@ -386,9 +397,9 @@ export function mineBookingRules(lines: JournalEntryLine[]): BookingManual {
   // Filter by minimum confidence
   const filtered = allRules.filter((r) => r.confidence >= MIN_CONFIDENCE);
 
-  // Sort by confidence * supportRatio descending
+  // Sort by confidence (already adjusted for sample size) descending
   filtered.sort(
-    (a, b) => b.confidence * b.supportRatio - a.confidence * a.supportRatio,
+    (a, b) => b.confidence - a.confidence,
   );
 
   // Take top N
