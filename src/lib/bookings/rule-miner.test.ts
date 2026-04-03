@@ -240,6 +240,39 @@ describe("mineDocumentTypeAccountRules", () => {
     expect(rules[0].scope.accountRange).toBe("Operating expenses");
   });
 
+  it("counts violating documents, not individual lines", () => {
+    const lines: JournalEntryLine[] = [];
+    // 8 documents with 1 debit line each in Operating expenses range
+    for (let i = 0; i < 8; i++) {
+      lines.push(
+        makeLine({
+          document_id: `D${i}`,
+          line_id: 1,
+          document_type: "KR",
+          gl_account: "070000",
+        }),
+      );
+    }
+    // 1 document with 3 debit lines outside the dominant range (Revenue)
+    // This should count as 1 violating document, not 3 violating lines
+    for (let j = 1; j <= 3; j++) {
+      lines.push(
+        makeLine({
+          document_id: "D-BAD",
+          line_id: j,
+          document_type: "KR",
+          gl_account: "040000",
+        }),
+      );
+    }
+
+    const rules = mineDocumentTypeAccountRules(lines);
+
+    expect(rules.length).toBe(1);
+    // 1 document violates, not 3 lines
+    expect(rules[0].violationCount).toBe(1);
+  });
+
   it("does not emit a rule when no range dominates", () => {
     const lines: JournalEntryLine[] = [];
     // 5 with revenue, 5 with expenses

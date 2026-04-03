@@ -267,7 +267,17 @@ export function mineDocumentTypeAccountRules(
         ),
         `Account range: ${dominantRange}`,
       ),
-      violationCount: classifiedCount - dominantCount,
+      violationCount: (() => {
+        // Count documents (not lines) with at least one debit line outside the dominant range
+        const docHasViolation = new Set<string>();
+        for (const line of debitLines) {
+          const range = lookupAccountRange(line.gl_account);
+          if (range && range !== dominantRange) {
+            docHasViolation.add(line.document_id);
+          }
+        }
+        return docHasViolation.size;
+      })(),
       scope: {
         category: "document_type_account",
         documentType: docType,
