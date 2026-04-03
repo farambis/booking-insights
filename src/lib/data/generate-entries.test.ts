@@ -24,7 +24,14 @@ describe("generateJournalEntries", () => {
     }
   });
 
-  it("every document balances (sum of S = sum of H)", () => {
+  it("every document balances (sum of S = sum of H) except intentional missing-counterpart anomalies", () => {
+    const missingCounterpartDocs = new Set(
+      anomalies
+        .filter((a) => a.startsWith("MISSING_COUNTERPART:"))
+        .map((a) => a.match(/Document (\d+)/)?.[1])
+        .filter(Boolean),
+    );
+
     const byDoc = new Map<string, JournalEntryLine[]>();
     for (const line of lines) {
       const arr = byDoc.get(line.document_id) ?? [];
@@ -32,7 +39,8 @@ describe("generateJournalEntries", () => {
       byDoc.set(line.document_id, arr);
     }
 
-    for (const [, docLines] of byDoc) {
+    for (const [docId, docLines] of byDoc) {
+      if (missingCounterpartDocs.has(docId)) continue;
       const debitSum = docLines
         .filter((l) => l.debit_credit === "S")
         .reduce((s, l) => s + l.amount, 0);
@@ -41,6 +49,13 @@ describe("generateJournalEntries", () => {
         .reduce((s, l) => s + l.amount, 0);
       expect(Math.abs(debitSum - creditSum)).toBeLessThan(0.01);
     }
+  });
+
+  it("applies missing counterpart anomalies", () => {
+    const mcAnomalies = anomalies.filter((a) =>
+      a.startsWith("MISSING_COUNTERPART:"),
+    );
+    expect(mcAnomalies.length).toBeGreaterThanOrEqual(1);
   });
 
   it("each document has 2-5 lines", () => {
