@@ -17,6 +17,18 @@ function addFlag(map: FlagMap, key: string, flag: BookingFlag): void {
 
 const now = new Date().toISOString();
 
+/**
+ * Strip trailing ISO dates (YYYY-MM-DD) and trailing numbers from booking texts
+ * so that date-suffixed variants like "Ausgangsrechnung 2025-01-15" and
+ * "Ausgangsrechnung 2025-01-16" normalize to the same base string.
+ */
+export function normalizeForComparison(text: string): string {
+  return text
+    .replace(/\s+\d{4}-\d{2}-\d{2}$/, "")
+    .replace(/\s+\d+$/, "")
+    .trim();
+}
+
 /** Confidence based on Levenshtein distance: 1->0.9, 2->0.7, 3->0.5 */
 function typoConfidence(distance: number): number {
   if (distance === 1) return 0.9;
@@ -45,16 +57,27 @@ export function detectTypos(lines: JournalEntryLine[]): FlagMap {
 
   const uniqueTexts = [...textCount.keys()];
 
-  // Pairwise comparison
+  // Pre-compute normalized forms
+  const normalized = new Map<string, string>();
+  for (const text of uniqueTexts) {
+    normalized.set(text, normalizeForComparison(text));
+  }
+
+  // Pairwise comparison on normalized forms
   for (let i = 0; i < uniqueTexts.length; i++) {
     for (let j = i + 1; j < uniqueTexts.length; j++) {
       const a = uniqueTexts[i];
       const b = uniqueTexts[j];
+      const normA = normalized.get(a)!;
+      const normB = normalized.get(b)!;
 
-      // Skip pairs where length difference exceeds 3
-      if (Math.abs(a.length - b.length) > 3) continue;
+      // Same base template (e.g. both "Ausgangsrechnung") — not a typo
+      if (normA === normB) continue;
 
-      const distance = levenshteinDistance(a, b);
+      // Skip pairs where normalized length difference exceeds 3
+      if (Math.abs(normA.length - normB.length) > 3) continue;
+
+      const distance = levenshteinDistance(normA, normB);
       if (distance < 1 || distance > 3) continue;
 
       // The less frequent text is the suspected typo
@@ -158,11 +181,11 @@ export function detectTextDuplicatePostings(
     documents.get(line.document_id)!.lines.push(line);
   }
 
-  // Build signatures: sorted set of (booking_text, gl_account) tuples
+  // Build signatures: sorted set of (normalized_text, gl_account) tuples
   const docSignatures = new Map<string, string>();
   for (const [docId, doc] of documents) {
     const tuples = doc.lines
-      .map((l) => `${l.booking_text}|${l.gl_account}`)
+      .map((l) => `${normalizeForComparison(l.booking_text)}|${l.gl_account}`)
       .sort();
     // Deduplicate tuples for the signature
     const uniqueTuples = [...new Set(tuples)];
