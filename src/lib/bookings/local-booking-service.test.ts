@@ -48,8 +48,8 @@ describe("transformAndFlag", () => {
   });
 
   it("deduplicates flags with the same type and relatedDocumentId", () => {
-    // Two documents with same text-account signature posted 1 day apart
-    // triggers text_duplicate_posting on all lines in both docs.
+    // Two documents with same amount, account, and text posted 1 day apart
+    // triggers duplicate_booking on all lines in both docs.
     // The document-level flags should be deduplicated.
     const lines: JournalEntryLine[] = [
       makeLine({
@@ -58,6 +58,7 @@ describe("transformAndFlag", () => {
         posting_date: "2025-01-15",
         booking_text: "Invoice X",
         gl_account: "070000",
+        amount: 1000,
         debit_credit: "S",
       }),
       makeLine({
@@ -66,6 +67,7 @@ describe("transformAndFlag", () => {
         posting_date: "2025-01-15",
         booking_text: "Invoice X",
         gl_account: "090000",
+        amount: 1000,
         debit_credit: "H",
       }),
       makeLine({
@@ -74,6 +76,7 @@ describe("transformAndFlag", () => {
         posting_date: "2025-01-16",
         booking_text: "Invoice X",
         gl_account: "070000",
+        amount: 1000,
         debit_credit: "S",
       }),
       makeLine({
@@ -82,6 +85,7 @@ describe("transformAndFlag", () => {
         posting_date: "2025-01-16",
         booking_text: "Invoice X",
         gl_account: "090000",
+        amount: 1000,
         debit_credit: "H",
       }),
     ];
@@ -89,13 +93,11 @@ describe("transformAndFlag", () => {
     const result = transformAndFlag(lines);
     const d1 = result.find((b) => b.documentId === "D1")!;
 
-    // Even though both lines in D1 are flagged for text_duplicate_posting,
+    // Even though both lines in D1 are flagged for duplicate_booking,
     // the document should only have one flag per type+relatedDocumentId
-    const textDupFlags = d1.flags.filter(
-      (f) => f.type === "text_duplicate_posting",
-    );
-    expect(textDupFlags.length).toBe(1);
-    expect(textDupFlags[0].relatedDocumentId).toBe("D2");
+    const dupFlags = d1.flags.filter((f) => f.type === "duplicate_booking");
+    expect(dupFlags.length).toBe(1);
+    expect(dupFlags[0].relatedDocumentId).toBe("D2");
   });
 
   it("picks the first debit line as primary for a multi-line document", () => {

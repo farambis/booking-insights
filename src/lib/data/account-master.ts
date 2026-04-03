@@ -144,6 +144,13 @@ export function lookupAccountName(glAccount: string): string | null {
   return GL_ACCOUNTS.find((a) => a.number === glAccount)?.name ?? null;
 }
 
+export function lookupAccountRange(glAccount: string): string | null {
+  const range = ACCOUNT_RANGES.find(
+    (r) => glAccount >= r.from && glAccount <= r.to,
+  );
+  return range?.category ?? null;
+}
+
 export interface CostCenter {
   id: string;
   name: string;

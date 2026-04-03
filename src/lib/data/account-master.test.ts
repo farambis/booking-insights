@@ -4,6 +4,7 @@ import {
   COST_CENTERS,
   DOCUMENT_TYPES,
   ACCOUNT_RANGES,
+  lookupAccountRange,
   type GlAccount,
 } from "./account-master";
 
@@ -73,6 +74,25 @@ describe("Account Master", () => {
         expect(cc.id).toBeTruthy();
         expect(cc.name).toBeTruthy();
       }
+    });
+  });
+
+  describe("lookupAccountRange", () => {
+    it("returns the category for an account within a known range", () => {
+      expect(lookupAccountRange("070000")).toBe("Operating expenses");
+      expect(lookupAccountRange("040100")).toBe("Revenue");
+      expect(lookupAccountRange("090000")).toBe("Bank & cash");
+    });
+
+    it("returns null for an account outside all ranges", () => {
+      expect(lookupAccountRange("999999")).toBeNull();
+      expect(lookupAccountRange("000001")).toBeNull();
+    });
+
+    it("returns the correct category for boundary values", () => {
+      expect(lookupAccountRange("010000")).toBe("Assets");
+      expect(lookupAccountRange("019999")).toBe("Assets");
+      expect(lookupAccountRange("099999")).toBe("Bank & cash");
     });
   });
 

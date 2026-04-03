@@ -4,7 +4,6 @@ import {
   normalizeForComparison,
   detectTypos,
   detectUnusualTextAccountCombos,
-  detectTextDuplicatePostings,
   detectTextAnomalies,
 } from "./text-anomaly-detector";
 
@@ -249,106 +248,8 @@ describe("detectUnusualTextAccountCombos", () => {
   });
 });
 
-describe("detectTextDuplicatePostings", () => {
-  it("flags documents with identical signatures posted within 2 days", () => {
-    const lines: JournalEntryLine[] = [
-      // Document 1: two lines
-      makeLine({
-        document_id: "D1",
-        line_id: 1,
-        posting_date: "2025-01-15",
-        booking_text: "Invoice A",
-        gl_account: "400000",
-      }),
-      makeLine({
-        document_id: "D1",
-        line_id: 2,
-        posting_date: "2025-01-15",
-        booking_text: "Invoice A",
-        gl_account: "160000",
-        debit_credit: "H",
-      }),
-      // Document 2: identical signature, posted 1 day later
-      makeLine({
-        document_id: "D2",
-        line_id: 1,
-        posting_date: "2025-01-16",
-        booking_text: "Invoice A",
-        gl_account: "400000",
-      }),
-      makeLine({
-        document_id: "D2",
-        line_id: 2,
-        posting_date: "2025-01-16",
-        booking_text: "Invoice A",
-        gl_account: "160000",
-        debit_credit: "H",
-      }),
-    ];
-
-    const result = detectTextDuplicatePostings(lines);
-
-    // Both documents should be flagged
-    expect(result.size).toBeGreaterThan(0);
-
-    // Check that at least one line from each doc is flagged
-    const d1Flags = result.get("D1:1");
-    const d2Flags = result.get("D2:1");
-    expect(d1Flags ?? d2Flags).toBeDefined();
-
-    const anyFlag = (d1Flags ?? d2Flags)!;
-    expect(anyFlag[0].type).toBe("text_duplicate_posting");
-    expect(anyFlag[0].severity).toBe("critical");
-    expect(anyFlag[0].confidence).toBe(0.8);
-  });
-
-  it("does not flag documents with different signatures", () => {
-    const lines: JournalEntryLine[] = [
-      makeLine({
-        document_id: "D1",
-        line_id: 1,
-        posting_date: "2025-01-15",
-        booking_text: "Invoice A",
-        gl_account: "400000",
-      }),
-      makeLine({
-        document_id: "D2",
-        line_id: 1,
-        posting_date: "2025-01-16",
-        booking_text: "Invoice B",
-        gl_account: "400000",
-      }),
-    ];
-
-    const result = detectTextDuplicatePostings(lines);
-    expect(result.size).toBe(0);
-  });
-
-  it("does not flag documents posted more than 2 days apart", () => {
-    const lines: JournalEntryLine[] = [
-      makeLine({
-        document_id: "D1",
-        line_id: 1,
-        posting_date: "2025-01-15",
-        booking_text: "Invoice A",
-        gl_account: "400000",
-      }),
-      makeLine({
-        document_id: "D2",
-        line_id: 1,
-        posting_date: "2025-01-20",
-        booking_text: "Invoice A",
-        gl_account: "400000",
-      }),
-    ];
-
-    const result = detectTextDuplicatePostings(lines);
-    expect(result.size).toBe(0);
-  });
-});
-
 describe("detectTextAnomalies", () => {
-  it("merges flags from all three detectors", () => {
+  it("merges flags from both detectors", () => {
     // Build a scenario that triggers at least the typo detector
     const lines: JournalEntryLine[] = [
       makeLine({ document_id: "D1", line_id: 1, booking_text: "Miete" }),

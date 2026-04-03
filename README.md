@@ -8,6 +8,9 @@ Financial analysis app based on SAP-style journal entry data. Detects red flags,
 
 - **Account ranges:** The chart of accounts follows a German mid-size company structure with 6-digit zero-padded GL accounts in 9 ranges (010000–019999 Assets through 090000–099999 Bank & Cash). All flag detection rules (expected debit/credit side, pattern breaks, amount ranges) assume these ranges. See [`src/lib/data/account-master.ts`](src/lib/data/account-master.ts) for the full definition.
 - **Five issues + two fixes per feature:** Each exercise PR identifies at least 5 issues during code/UX/architecture review, of which at least 2 are fixed in follow-up commits. The review comments are documented on the PRs, and the fix commits are linked in the Exercise 2 section below.
+- **Duplicate detection requires amount match:** A text-only duplicate detector (same booking text + same account) produces too many false positives on routine repeat bookings (e.g., monthly rent, recurring vendor invoices). Duplicate detection only makes sense when amount is included as a required signal. Therefore, `text_duplicate_posting` was removed in favor of the multi-signal `duplicate_booking` detector which gates on amount match (≤0.50 EUR).
+- **Separate doc files allow full-page detail:** Each `.md` file in `docs/` and `docs/design/` is treated as a standalone documentation page (similar to a Notion or Google Docs page), so more than 6–8 bullet points is expected. These are comprehensive references, not abbreviated summaries.
+- **Live deployment replaces video:** Instead of a screen recording, the [deployed application](https://booking-insights-farambis-projects.vercel.app) serves as the demo. This allows reviewers to interact with the app directly rather than watching a static walkthrough.
 
 ## Booking Data
 
@@ -50,11 +53,13 @@ journal-entries.json
 **Detectors and what they catch:**
 
 **Text anomaly detector** (`text-anomaly-detector.ts`) — Analyzes booking text strings across all journal entries:
+
 - `text_typo` — Compares all unique booking texts pairwise using Levenshtein distance. Texts with distance 1-3 are flagged as potential typos. The less frequent text is the suspected error. Texts are normalized first (trailing dates and numbers stripped) to avoid false positives on date-suffixed entries.
 - `unusual_text_account` — Builds frequency maps of which GL accounts each booking text appears on. If a text has 3+ occurrences and a particular account holds less than 10% of them, that combination is flagged as unusual.
 - `text_duplicate_posting` — Creates a document signature (sorted set of booking text + GL account tuples) for each document. Documents with identical signatures posted within 2 days of each other are flagged as potential double postings.
 
 **Duplicate detector** (`duplicate-detector.ts`) — Multi-signal weighted scoring across 9 criteria per document pair:
+
 - Amount (0.25 weight, **required gate** — must match within 0.50 EUR)
 - Vendor/Customer ID (0.20), GL account (0.15), contra account (0.10)
 - Posting date proximity (0.10 — 0 days = 1.0, decreasing to 0.0 beyond 5 days)
@@ -64,6 +69,7 @@ journal-entries.json
 Gate rules: amount match required (same vendor + same account without same amount is normal business), invoice+payment pairs (KR+KZ, DR+DZ) excluded, same document excluded. Confidence ≥0.75 = critical, ≥0.35 = warning.
 
 **Pattern detectors** (`pattern-detectors.ts`) — Structural anomalies in the booking data:
+
 - `unusual_amount` — Amount exceeds 2x the account's average across all bookings
 - `round_number_anomaly` — Suspiciously round amounts (divisible by 1000) on accounts that normally have variable amounts
 - `pattern_break` — Booking posted on the wrong debit/credit side for its account category (e.g., revenue account on debit side), or personnel expense with a customer reference
@@ -74,6 +80,7 @@ Gate rules: amount match required (same vendor + same account without same amoun
 Separately from flagging, the app derives booking rules from transaction data to serve as a data-driven "booking manual." Rules describe "how things should be" (prescriptive), while flags describe "what looks wrong" (diagnostic).
 
 **Five rule miners** (`rule-miner.ts`) extract patterns:
+
 - **Account + tax code** — For accounts with ≥5 lines, identifies the dominant tax code (≥80% concentration). Example: "Account 070000 (Miete) uses tax code V19 in 94% of bookings."
 - **Account + cost center** — Same approach for cost center assignments. Example: "Account 060000 (Gehaelter) always uses cost center 1000."
 - **Document type + account range** — Groups by document type, finds the dominant account range on the debit side (≥70%). Example: "KR documents typically debit operating expense accounts."

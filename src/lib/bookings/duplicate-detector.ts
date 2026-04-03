@@ -1,6 +1,7 @@
 import type { JournalEntryLine } from "@/lib/data/journal-entry.types";
 import type { FlagMap } from "./flag-utils";
 import { levenshteinDistance } from "./levenshtein";
+import { groupByDocument } from "./grouping";
 
 /** Summary of a document derived from its journal entry lines */
 export interface DocumentSummary {
@@ -283,12 +284,7 @@ export function detectDuplicateBookings(
 ): FlagMap {
   const result: FlagMap = new Map();
 
-  const documentLines = new Map<string, JournalEntryLine[]>();
-  for (const line of lines) {
-    const docLines = documentLines.get(line.document_id) ?? [];
-    docLines.push(line);
-    documentLines.set(line.document_id, docLines);
-  }
+  const documentLines = groupByDocument(lines);
 
   const documents: DocumentSummary[] = [];
   for (const [, docLines] of documentLines) {

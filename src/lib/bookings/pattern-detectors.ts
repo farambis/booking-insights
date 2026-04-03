@@ -2,6 +2,7 @@ import type { JournalEntryLine } from "@/lib/data/journal-entry.types";
 import type { FlagMap } from "./flag-utils";
 import { flagKey, addFlag } from "./flag-utils";
 import { normalizeForComparison } from "./text-anomaly-detector";
+import { groupByDocument, groupByField } from "./grouping";
 
 /**
  * Detect amounts that are statistical outliers within their GL account.
@@ -15,12 +16,7 @@ export function detectUnusualAmounts(
   const result: FlagMap = new Map();
 
   // Group lines by gl_account
-  const accountLines = new Map<string, JournalEntryLine[]>();
-  for (const line of lines) {
-    const existing = accountLines.get(line.gl_account) ?? [];
-    existing.push(line);
-    accountLines.set(line.gl_account, existing);
-  }
+  const accountLines = groupByField(lines, (l) => l.gl_account);
 
   for (const [account, acctLines] of accountLines) {
     if (acctLines.length < 10) continue;
@@ -68,12 +64,7 @@ export function detectRoundNumberAnomalies(
   const result: FlagMap = new Map();
 
   // Group lines by gl_account
-  const accountLines = new Map<string, JournalEntryLine[]>();
-  for (const line of lines) {
-    const existing = accountLines.get(line.gl_account) ?? [];
-    existing.push(line);
-    accountLines.set(line.gl_account, existing);
-  }
+  const accountLines = groupByField(lines, (l) => l.gl_account);
 
   for (const [, acctLines] of accountLines) {
     if (acctLines.length < 5) continue;
@@ -178,12 +169,7 @@ export function detectMissingCounterparts(
   const result: FlagMap = new Map();
 
   // Group lines by document_id
-  const documents = new Map<string, JournalEntryLine[]>();
-  for (const line of lines) {
-    const docLines = documents.get(line.document_id) ?? [];
-    docLines.push(line);
-    documents.set(line.document_id, docLines);
-  }
+  const documents = groupByDocument(lines);
 
   for (const [, docLines] of documents) {
     if (docLines.length < 2) continue;

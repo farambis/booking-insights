@@ -4,6 +4,8 @@ import {
   lookupCostCenterName,
 } from "@/lib/data/account-master";
 import type { JournalEntryLine } from "@/lib/data/journal-entry.types";
+import { journalEntryLineSchema } from "@/lib/data/journal-entry.schema";
+import { z } from "zod";
 import type {
   BookingDetail,
   BookingFlag,
@@ -27,25 +29,13 @@ import {
 } from "./pattern-detectors";
 import { mineBookingRules } from "./rule-miner";
 import { findRuleViolations } from "./rule-violations";
+import { groupByDocument } from "./grouping";
 import type { BookingManual } from "./rule.types";
 
 function deriveStatus(flags: BookingFlag[]): BookingStatus {
   if (flags.some((f) => f.severity === "critical")) return "critical";
   if (flags.some((f) => f.severity === "warning")) return "warning";
   return "clean";
-}
-
-/** Group journal entry lines by document_id */
-function groupByDocument(
-  lines: JournalEntryLine[],
-): Map<string, JournalEntryLine[]> {
-  const groups = new Map<string, JournalEntryLine[]>();
-  for (const line of lines) {
-    const docLines = groups.get(line.document_id) ?? [];
-    docLines.push(line);
-    groups.set(line.document_id, docLines);
-  }
-  return groups;
 }
 
 /** Transform raw journal entries into BookingDetail[] */
@@ -161,11 +151,14 @@ export function transformAndFlag(
   return bookings;
 }
 
+// Validate JSON data at the module boundary instead of using `as` casts
+const allLines: JournalEntryLine[] = z
+  .array(journalEntryLineSchema)
+  .parse(journalEntries);
+
 // Module-level cache: transform once at import time
-const allBookings = transformAndFlag(journalEntries as JournalEntryLine[]);
-const bookingManual: BookingManual = mineBookingRules(
-  journalEntries as JournalEntryLine[],
-);
+const allBookings = transformAndFlag(allLines);
+const bookingManual: BookingManual = mineBookingRules(allLines);
 
 export const localBookingService: BookingService = {
   async getDashboardSummary() {
@@ -194,8 +187,7 @@ export const localBookingService: BookingService = {
     const rule = bookingManual.rules.find((r) => r.id === ruleId);
     if (!rule) return null;
 
-    const rawLines = journalEntries as JournalEntryLine[];
-    const violations = findRuleViolations(rule, rawLines, allBookings);
+    const violations = findRuleViolations(rule, allLines, allBookings);
     return { rule, violations };
   },
 };

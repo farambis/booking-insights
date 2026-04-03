@@ -15,7 +15,6 @@ const VALID_FLAG_TYPES: FlagType[] = [
   "round_number_anomaly",
   "text_typo",
   "unusual_text_account",
-  "text_duplicate_posting",
 ];
 const VALID_SORT_COLUMNS: SortableColumn[] = [
   "date",

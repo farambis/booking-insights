@@ -2,6 +2,7 @@ import type { JournalEntryLine } from "@/lib/data/journal-entry.types";
 import type { FlagMap } from "./flag-utils";
 import { flagKey, addFlag } from "./flag-utils";
 import { levenshteinDistance } from "./levenshtein";
+import { groupByDocument } from "./grouping";
 
 /**
  * Strip trailing ISO dates (YYYY-MM-DD) and trailing numbers from booking texts
@@ -176,96 +177,9 @@ export function detectUnusualTextAccountCombos(
 }
 
 /**
- * Detect suspiciously similar documents by comparing document signatures
- * (sorted text+account tuples) and posting dates within 2 calendar days.
- */
-export function detectTextDuplicatePostings(
-  lines: JournalEntryLine[],
-  detectedAt: string = new Date().toISOString(),
-): FlagMap {
-  const result: FlagMap = new Map();
-
-  // Group lines by document
-  const documents = new Map<
-    string,
-    { lines: JournalEntryLine[]; postingDate: string }
-  >();
-  for (const line of lines) {
-    if (!documents.has(line.document_id)) {
-      documents.set(line.document_id, {
-        lines: [],
-        postingDate: line.posting_date,
-      });
-    }
-    documents.get(line.document_id)!.lines.push(line);
-  }
-
-  // Build signatures: sorted set of (normalized_text, gl_account) tuples
-  const docSignatures = new Map<string, string>();
-  for (const [docId, doc] of documents) {
-    const tuples = doc.lines
-      .map((l) => `${normalizeForComparison(l.booking_text)}|${l.gl_account}`)
-      .sort();
-    // Deduplicate tuples for the signature
-    const uniqueTuples = [...new Set(tuples)];
-    docSignatures.set(docId, uniqueTuples.join(";;"));
-  }
-
-  // Group documents by signature
-  const signatureGroups = new Map<string, string[]>();
-  for (const [docId, sig] of docSignatures) {
-    const group = signatureGroups.get(sig) ?? [];
-    group.push(docId);
-    signatureGroups.set(sig, group);
-  }
-
-  // Check pairs within each signature group
-  for (const docIds of signatureGroups.values()) {
-    if (docIds.length < 2) continue;
-
-    for (let i = 0; i < docIds.length; i++) {
-      for (let j = i + 1; j < docIds.length; j++) {
-        const docA = documents.get(docIds[i])!;
-        const docB = documents.get(docIds[j])!;
-
-        const dateA = new Date(docA.postingDate + "T00:00:00");
-        const dateB = new Date(docB.postingDate + "T00:00:00");
-        const daysDiff =
-          Math.abs(dateA.getTime() - dateB.getTime()) / (1000 * 60 * 60 * 24);
-
-        if (daysDiff > 2) continue;
-
-        // Flag all lines in both documents
-        for (const line of docA.lines) {
-          addFlag(result, flagKey(line.document_id, line.line_id), {
-            type: "text_duplicate_posting",
-            severity: "critical",
-            explanation: `Document ${docIds[i]} and ${docIds[j]} have identical text-account signatures and were posted ${daysDiff} day(s) apart`,
-            confidence: 0.8,
-            detectedAt,
-            relatedDocumentId: docIds[j],
-          });
-        }
-
-        for (const line of docB.lines) {
-          addFlag(result, flagKey(line.document_id, line.line_id), {
-            type: "text_duplicate_posting",
-            severity: "critical",
-            explanation: `Document ${docIds[j]} and ${docIds[i]} have identical text-account signatures and were posted ${daysDiff} day(s) apart`,
-            confidence: 0.8,
-            detectedAt,
-            relatedDocumentId: docIds[i],
-          });
-        }
-      }
-    }
-  }
-
-  return result;
-}
-
-/**
- * Orchestrator: run all three text anomaly detectors and merge results.
+ * Orchestrator: run text anomaly detectors and merge results.
+ * Note: text-based duplicate detection was removed — duplicate detection
+ * is now handled by duplicate-detector.ts with multi-signal scoring.
  */
 export function detectTextAnomalies(
   lines: JournalEntryLine[],
@@ -273,11 +187,7 @@ export function detectTextAnomalies(
 ): FlagMap {
   const merged: FlagMap = new Map();
 
-  const detectors = [
-    detectTypos,
-    detectUnusualTextAccountCombos,
-    detectTextDuplicatePostings,
-  ];
+  const detectors = [detectTypos, detectUnusualTextAccountCombos];
 
   for (const detect of detectors) {
     const flags = detect(lines, detectedAt);

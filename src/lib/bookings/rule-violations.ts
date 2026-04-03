@@ -1,15 +1,8 @@
 import type { JournalEntryLine } from "@/lib/data/journal-entry.types";
 import type { BookingListItem } from "./booking.types";
 import type { BookingRule } from "./rule.types";
-import { ACCOUNT_RANGES } from "@/lib/data/account-master";
+import { lookupAccountRange } from "@/lib/data/account-master";
 import { normalizeForComparison } from "./text-anomaly-detector";
-
-function lookupAccountRange(glAccount: string): string | null {
-  const range = ACCOUNT_RANGES.find(
-    (r) => glAccount >= r.from && glAccount <= r.to,
-  );
-  return range?.category ?? null;
-}
 
 /**
  * Find all bookings that violate a given rule.

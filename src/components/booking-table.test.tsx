@@ -106,7 +106,7 @@ describe("BookingTable", () => {
       status: "critical",
       flags: [
         {
-          type: "text_duplicate_posting",
+          type: "duplicate_booking",
           severity: "critical",
           explanation: "test",
           confidence: 0.8,
@@ -160,7 +160,7 @@ describe("BookingTable", () => {
       status: "critical",
       flags: [
         {
-          type: "text_duplicate_posting",
+          type: "duplicate_booking",
           severity: "critical",
           explanation: "test",
           confidence: 0.8,
@@ -186,7 +186,7 @@ describe("BookingTable", () => {
       status: "critical",
       flags: [
         {
-          type: "text_duplicate_posting",
+          type: "duplicate_booking",
           severity: "critical",
           explanation: "test",
           confidence: 0.8,

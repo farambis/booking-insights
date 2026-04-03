@@ -1,6 +1,10 @@
 import type { JournalEntryLine } from "@/lib/data/journal-entry.types";
 import type { BookingManual, BookingRule, RuleEvidence } from "./rule.types";
-import { GL_ACCOUNTS, ACCOUNT_RANGES } from "@/lib/data/account-master";
+import {
+  lookupAccountName,
+  lookupAccountRange,
+} from "@/lib/data/account-master";
+import { groupByField } from "./grouping";
 import { normalizeForComparison } from "./text-anomaly-detector";
 
 /** Minimum lines per group to emit tax code / cost center rules */
@@ -44,17 +48,6 @@ function adjustedConfidence(concentration: number, sampleSize: number): number {
   return concentration * sizeFactor;
 }
 
-function lookupAccountName(glAccount: string): string | null {
-  return GL_ACCOUNTS.find((a) => a.number === glAccount)?.name ?? null;
-}
-
-function lookupAccountRange(glAccount: string): string | null {
-  const range = ACCOUNT_RANGES.find(
-    (r) => glAccount >= r.from && glAccount <= r.to,
-  );
-  return range?.category ?? null;
-}
-
 function buildEvidence(
   lines: JournalEntryLine[],
   note: string,
@@ -86,13 +79,10 @@ export function mineAccountTaxCodeRules(
   const rules: BookingRule[] = [];
 
   // Group by gl_account, only lines with non-null tax_code
-  const byAccount = new Map<string, JournalEntryLine[]>();
-  for (const line of lines) {
-    if (line.tax_code === null) continue;
-    const group = byAccount.get(line.gl_account) ?? [];
-    group.push(line);
-    byAccount.set(line.gl_account, group);
-  }
+  const byAccount = groupByField(
+    lines.filter((l) => l.tax_code !== null),
+    (l) => l.gl_account,
+  );
 
   for (const [account, accountLines] of byAccount) {
     if (accountLines.length < MIN_LINES_DOMINANT) continue;
@@ -151,13 +141,10 @@ export function mineAccountCostCenterRules(
 ): BookingRule[] {
   const rules: BookingRule[] = [];
 
-  const byAccount = new Map<string, JournalEntryLine[]>();
-  for (const line of lines) {
-    if (line.cost_center === null) continue;
-    const group = byAccount.get(line.gl_account) ?? [];
-    group.push(line);
-    byAccount.set(line.gl_account, group);
-  }
+  const byAccount = groupByField(
+    lines.filter((l) => l.cost_center !== null),
+    (l) => l.gl_account,
+  );
 
   for (const [account, accountLines] of byAccount) {
     if (accountLines.length < MIN_LINES_DOMINANT) continue;
@@ -214,12 +201,7 @@ export function mineDocumentTypeAccountRules(
 ): BookingRule[] {
   const rules: BookingRule[] = [];
 
-  const byDocType = new Map<string, JournalEntryLine[]>();
-  for (const line of lines) {
-    const group = byDocType.get(line.document_type) ?? [];
-    group.push(line);
-    byDocType.set(line.document_type, group);
-  }
+  const byDocType = groupByField(lines, (l) => l.document_type);
 
   for (const [docType, docTypeLines] of byDocType) {
     // Only look at debit lines — the credit side is just the contra entry
@@ -295,13 +277,9 @@ export function mineRecurringTextRules(
   const rules: BookingRule[] = [];
 
   // Group by normalized text
-  const byText = new Map<string, JournalEntryLine[]>();
-  for (const line of lines) {
-    const normalized = normalizeForComparison(line.booking_text);
-    const group = byText.get(normalized) ?? [];
-    group.push(line);
-    byText.set(normalized, group);
-  }
+  const byText = groupByField(lines, (l) =>
+    normalizeForComparison(l.booking_text),
+  );
 
   for (const [normalizedText, textLines] of byText) {
     // Count distinct months
@@ -466,12 +444,7 @@ export function mineBookingRules(lines: JournalEntryLine[]): BookingManual {
 
   // Category-balanced selection: pick the best rule from each category first,
   // then fill remaining slots by confidence
-  const byCategory = new Map<string, BookingRule[]>();
-  for (const rule of filtered) {
-    const group = byCategory.get(rule.category) ?? [];
-    group.push(rule);
-    byCategory.set(rule.category, group);
-  }
+  const byCategory = groupByField(filtered, (r) => r.category);
   for (const group of byCategory.values()) {
     group.sort((a, b) => b.confidence - a.confidence);
   }

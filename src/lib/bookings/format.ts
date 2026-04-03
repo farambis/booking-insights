@@ -36,7 +36,6 @@ const FLAG_TYPE_LABELS: Record<FlagType, string> = {
   round_number_anomaly: "Round Number Anomaly",
   text_typo: "Text Typo",
   unusual_text_account: "Unusual Text-Account Combo",
-  text_duplicate_posting: "Text Duplicate Posting",
 };
 
 /** Map FlagType to human-readable label */
@@ -52,7 +51,6 @@ const FLAG_TYPE_SHORT_LABELS: Record<FlagType, string> = {
   round_number_anomaly: "Round Nr.",
   text_typo: "Typo",
   unusual_text_account: "Unusual",
-  text_duplicate_posting: "Duplicate",
 };
 
 /** Short label for use in table columns */
